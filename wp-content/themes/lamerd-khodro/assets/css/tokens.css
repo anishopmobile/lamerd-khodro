@@ -1,0 +1,101 @@
+/**
+ * Design tokens + local font faces.
+ * Palette: deep navy (trust/data), signal orange (price/action), functional green/red.
+ */
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('../fonts/Vazirmatn-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('../fonts/Vazirmatn-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('../fonts/Vazirmatn-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('../fonts/Vazirmatn-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Vazirmatn';
+	src: url('../fonts/Vazirmatn-ExtraBold.woff2') format('woff2');
+	font-weight: 800;
+	font-style: normal;
+	font-display: swap;
+}
+
+:root {
+	--lk-font: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif;
+
+	--lk-ink: #0a1f33;
+	--lk-ink-deep: #061725;
+	--lk-ink-soft: #17364f;
+	--lk-accent: #f26522;
+	--lk-accent-deep: #d4510f;
+	--lk-accent-soft: #fff1e8;
+
+	--lk-paper: #ffffff;
+	--lk-surface: #f5f7f9;
+	--lk-surface-2: #edf1f5;
+
+	--lk-text: #16232e;
+	--lk-muted: #5c6b79;
+	--lk-muted-2: #8b98a4;
+	--lk-line: #e2e8ee;
+	--lk-line-strong: #ccd7e1;
+
+	--lk-up: #0e7c57;
+	--lk-up-soft: #e8f6f0;
+	--lk-down: #b02a20;
+	--lk-down-soft: #fceceb;
+	--lk-warn: #a1721b;
+	--lk-warn-soft: #fdf4e4;
+
+	--lk-radius-lg: 20px;
+	--lk-radius: 14px;
+	--lk-radius-sm: 10px;
+	--lk-radius-xs: 6px;
+	--lk-radius-pill: 999px;
+
+	--lk-shadow-xs: 0 1px 2px rgba(10, 31, 51, 0.06);
+	--lk-shadow-sm: 0 8px 20px -14px rgba(10, 31, 51, 0.4);
+	--lk-shadow: 0 20px 44px -30px rgba(10, 31, 51, 0.45);
+	--lk-shadow-lg: 0 40px 70px -36px rgba(10, 31, 51, 0.55);
+
+	--lk-container: 1240px;
+	--lk-gutter: 20px;
+	--lk-header-h: 74px;
+
+	--lk-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+	--lk-fast: 160ms;
+	--lk-slow: 320ms;
+
+	--lk-fs-xs: 0.75rem;
+	--lk-fs-sm: 0.8125rem;
+	--lk-fs-base: 0.9375rem;
+	--lk-fs-md: 1rem;
+	--lk-fs-lg: 1.125rem;
+
+	--lk-z-header: 50;
+	--lk-z-drawer: 90;
+	--lk-z-toast: 120;
+}

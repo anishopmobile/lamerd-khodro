@@ -1,0 +1,431 @@
+/**
+ * Mobile-first enhancement layer.
+ * Base styles describe the 320px experience; every breakpoint adds capability.
+ * Verified widths: 320, 360, 390, 480, 600, 768, 900, 1024, 1280, 1440, 1920.
+ */
+
+/* Base corrections where a component class outranks the section class --- */
+.lk-header__cta.lk-btn {
+	display: none;
+}
+
+.lk-topbar__end {
+	display: none;
+}
+
+/* 480px — two-up brand tiles and larger type --------------------------- */
+@media (min-width: 480px) {
+	.lk-brands {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.lk-brands--page {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-hero__title {
+		font-size: 2.1rem;
+	}
+
+	.lk-quickfact {
+		min-width: 120px;
+	}
+}
+
+/* 600px — two-column cards, stats row, visible date --------------------- */
+@media (min-width: 600px) {
+	.lk-stats {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.lk-grid--2 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-news-grid--pair {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-price-cards {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-filters__field {
+		flex: 1 1 140px;
+	}
+
+	.lk-brands {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.lk-brands--page {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.lk-topbar__date,
+	.lk-topbar__sep {
+		display: inline-block;
+	}
+
+	.lk-topbar__end {
+		display: flex;
+	}
+
+	.lk-logo__tag {
+		display: block;
+	}
+
+	.lk-footer__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-contact-cards {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-cmp-table {
+		min-width: 620px;
+	}
+}
+
+/* 768px — two-column grids, desktop table, wider hero ------------------ */
+@media (min-width: 768px) {
+	.lk-section {
+		padding-block: 64px;
+	}
+
+	.lk-section--tight {
+		padding-block: 38px 56px;
+	}
+
+	.lk-grid--3,
+	.lk-grid--4 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-news-grid,
+	.lk-news-grid--archive {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-acard--featured {
+		grid-column: span 2;
+	}
+
+	.lk-news-grid--archive .lk-acard--featured {
+		grid-column: span 2;
+	}
+
+	.lk-brands {
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+	}
+
+	.lk-hero {
+		padding-block: 54px 60px;
+	}
+
+	.lk-header__inner {
+		gap: 20px;
+	}
+
+	.lk-compare-btn {
+		width: auto;
+		padding-inline: 12px;
+	}
+
+	.lk-compare-btn__label {
+		display: inline;
+	}
+
+	.lk-logo__mark {
+		width: 44px;
+		height: 44px;
+	}
+
+	.lk-specs {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-section-head {
+		flex-direction: row;
+		align-items: flex-end;
+		gap: 24px;
+	}
+
+	.lk-chart {
+		height: 300px;
+	}
+
+	.lk-pagehero__row {
+		flex-direction: row;
+		align-items: flex-end;
+	}
+
+	.lk-article__body {
+		padding-block-start: 34px;
+	}
+
+	.lk-footer {
+		margin-block-start: 72px;
+	}
+
+	.lk-notfound {
+		padding-block: 60px 30px;
+	}
+}
+
+/* 900px — desktop navigation, table instead of cards ------------------- */
+@media (min-width: 900px) {
+	.lk-nav {
+		display: block;
+	}
+
+	.lk-menu-toggle {
+		display: none;
+	}
+
+	.lk-header__cta.lk-btn {
+		display: inline-flex;
+	}
+
+	.lk-table-wrap {
+		display: block;
+	}
+
+	.lk-price-cards {
+		display: none;
+	}
+
+	.lk-filters__actions {
+		flex-basis: auto;
+		margin-inline-start: auto;
+	}
+
+	.lk-filters__search {
+		flex-basis: 220px;
+	}
+
+	.lk-sales {
+		grid-template-columns: 0.8fr 1.2fr;
+	}
+
+	.lk-section {
+		padding-block: 72px;
+	}
+
+	.lk-section--tight {
+		padding-block: 44px 64px;
+	}
+}
+
+/* 1024px — full grids, hero split, brand page columns ------------------ */
+@media (min-width: 1024px) {
+	.lk-grid--4 {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.lk-news-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-acard--featured {
+		grid-column: span 1;
+	}
+
+	.lk-hero__grid {
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+		gap: 54px;
+	}
+
+	.lk-hero {
+		padding-block: 64px 72px;
+	}
+
+	.lk-hero__title {
+		font-size: clamp(2rem, 1.3rem + 2.9vw, 3.35rem);
+	}
+
+	.lk-brands {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+
+	.lk-brands--page {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.lk-footer__grid {
+		grid-template-columns: 1.7fr 1fr 1fr 1.3fr;
+		gap: 40px;
+	}
+
+	.lk-vhero__grid {
+		grid-template-columns: minmax(0, 1fr) 340px;
+	}
+
+	.lk-movers__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-compare-band__grid {
+		grid-template-columns: 1fr 0.9fr;
+	}
+
+	.lk-compare-band__visual {
+		display: block;
+	}
+
+	.lk-cmpmock__badge {
+		display: block;
+	}
+}
+
+/* 1200px — four-column cards and seven brand tiles --------------------- */
+@media (min-width: 1200px) {
+	.lk-grid--4 {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.lk-news-grid {
+		grid-template-columns: 1.35fr 1fr 1fr;
+	}
+
+	.lk-acard--featured {
+		grid-column: span 1;
+	}
+
+	.lk-brands {
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+	}
+
+	.lk-brands--page {
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+	}
+}
+
+/* 1440px — comfortable editorial margins ------------------------------- */
+@media (min-width: 1440px) {
+	:root {
+		--lk-gutter: 24px;
+	}
+
+	.lk-hero__grid {
+		gap: 64px;
+	}
+
+	.lk-brands--page {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+}
+
+/* Sale listings -------------------------------------------------------- */
+@media (min-width: 600px) {
+	.lk-listing-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.lk-featured-band {
+		padding: 22px 22px 24px;
+	}
+
+	.lk-listing__facts {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		column-gap: 32px;
+	}
+}
+
+@media (min-width: 900px) {
+	.lk-listing-grid {
+		gap: 20px;
+	}
+
+	.lk-featured-band__head {
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: baseline;
+		column-gap: 16px;
+	}
+
+	.lk-featured-band__note {
+		justify-self: end;
+		text-align: end;
+	}
+}
+
+@media (min-width: 1200px) {
+	.lk-listing-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+/* Home sale showcase --------------------------------------------------- */
+@media (min-width: 600px) {
+	.lk-hsale {
+		padding-block: 56px;
+	}
+
+	.lk-hsale__head {
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 24px;
+		margin-block-end: 30px;
+	}
+
+	.lk-hsale__more {
+		align-self: flex-end;
+		flex: none;
+	}
+
+	.lk-hsale__media {
+		aspect-ratio: 16 / 8;
+	}
+}
+
+@media (min-width: 900px) {
+	.lk-hsale {
+		padding-block: 66px;
+	}
+
+	.lk-hsale__grid {
+		grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+		gap: 18px;
+		align-items: stretch;
+	}
+
+	.lk-hsale__body {
+		padding: 20px 22px 22px;
+		gap: 13px;
+	}
+
+	.lk-hsale__name {
+		font-size: 1.28rem;
+	}
+
+	.lk-hsale__side {
+		grid-template-rows: repeat(3, minmax(0, 1fr));
+	}
+
+	.lk-hsale__row-card {
+		grid-template-columns: 118px minmax(0, 1fr);
+		padding: 12px;
+	}
+
+	.lk-hsale__row-name {
+		font-size: 0.9rem;
+	}
+}
+
+@media (min-width: 1200px) {
+	.lk-hsale__media {
+		aspect-ratio: 16 / 7.4;
+	}
+
+	.lk-hsale__row-card {
+		grid-template-columns: 132px minmax(0, 1fr);
+	}
+}
+
+@media (min-width: 900px) {
+	.lk-hsale__lead:not(.has-photo) .lk-hsale__media {
+		aspect-ratio: 16 / 3.6;
+	}
+}

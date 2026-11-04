@@ -1,0 +1,21 @@
+/*
+Theme Name: Lamerd Khodro
+Theme URI: https://lamerdkhodro.ir
+Author: Lamerd Khodro
+Author URI: https://lamerdkhodro.ir
+Description: قالب اختصاصی و راست‌چین لامرد خودرو — Automotive Editorial Design، موبایل‌فرست، بدون صفحه‌ساز و بدون وابستگی خارجی.
+Version: 1.0.0
+Requires at least: 6.4
+Tested up to: 7.1
+Requires PHP: 8.0
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: lamerd-khodro
+Tags: rtl-language-support, custom-menu, featured-images, translation-ready, custom-logo
+*/
+
+/*
+ * استایل‌های اصلی در assets/css بارگذاری می‌شوند:
+ * tokens.css, base.css, layout.css, components.css, pages.css, responsive.css
+ * این فایل فقط شناسنامه قالب است.
+ */

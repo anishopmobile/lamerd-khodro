@@ -1,0 +1,219 @@
+/**
+ * Lamerd Khodro Core — admin styles (RTL).
+ */
+
+.lk-metabox {
+	direction: rtl;
+	display: grid;
+	grid-template-columns: 180px minmax(0, 1fr);
+	gap: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.lk-metabox__nav {
+	display: flex;
+	flex-direction: column;
+	background: #f6f7f7;
+	border-inline-end: 1px solid #dcdcde;
+	padding: 8px;
+	gap: 2px;
+}
+
+.lk-metabox__tab {
+	appearance: none;
+	border: 0;
+	background: transparent;
+	text-align: start;
+	padding: 10px 12px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 13px;
+	color: #1d2327;
+	font-family: inherit;
+}
+
+.lk-metabox__tab:hover {
+	background: #eaecee;
+}
+
+.lk-metabox__tab.is-active {
+	background: #2271b1;
+	color: #fff;
+	font-weight: 600;
+}
+
+.lk-metabox__panels {
+	padding: 16px 20px;
+}
+
+.lk-metabox__panel {
+	display: none;
+}
+
+.lk-metabox__panel.is-active {
+	display: block;
+}
+
+.lk-metabox__grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px 18px;
+}
+
+.lk-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.lk-field--wide {
+	grid-column: 1 / -1;
+}
+
+.lk-field__label {
+	font-weight: 600;
+	font-size: 12px;
+	color: #1d2327;
+}
+
+.lk-field input[type="text"],
+.lk-field input[type="number"],
+.lk-field select,
+.lk-field textarea {
+	width: 100%;
+	border-radius: 4px;
+}
+
+.lk-field input[dir="ltr"] {
+	direction: ltr;
+	text-align: left;
+}
+
+.lk-field__unit,
+.lk-field__hint {
+	font-size: 11px;
+	color: #646970;
+}
+
+.lk-metabox__note {
+	margin: 16px 0 0;
+	padding-top: 12px;
+	border-top: 1px solid #f0f0f1;
+	font-size: 12px;
+	color: #646970;
+}
+
+.lk-side {
+	margin: 0;
+}
+
+.lk-side li {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 0;
+	margin: 0;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 12px;
+}
+
+.lk-side li:last-child {
+	border-bottom: 0;
+}
+
+.lk-side span {
+	color: #646970;
+}
+
+.lk-side strong {
+	font-weight: 600;
+}
+
+.lk-media__preview {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-block: 8px;
+}
+
+.lk-media__item {
+	position: relative;
+	display: inline-flex;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 2px;
+	background: #fff;
+}
+
+.lk-media__item img {
+	width: 64px;
+	height: 64px;
+	object-fit: cover;
+	display: block;
+}
+
+.lk-media__item::after {
+	content: "×";
+	position: absolute;
+	inset-block-start: -6px;
+	inset-inline-start: -6px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #d63638;
+	color: #fff;
+	font-size: 13px;
+	line-height: 18px;
+	text-align: center;
+	cursor: pointer;
+}
+
+.lk-brand-logo-preview img {
+	max-width: 120px;
+	height: auto;
+	margin-block-start: 8px;
+	background: #fff;
+	padding: 4px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.lk-completion {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #f0f6fc;
+	color: #2271b1;
+	font-size: 12px;
+}
+
+.lk-muted {
+	color: #8c8f94;
+}
+
+@media (max-width: 1100px) {
+	.lk-metabox__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 782px) {
+	.lk-metabox {
+		grid-template-columns: 1fr;
+	}
+
+	.lk-metabox__nav {
+		flex-direction: row;
+		flex-wrap: wrap;
+		border-inline-end: 0;
+		border-block-end: 1px solid #dcdcde;
+	}
+
+	.lk-metabox__grid {
+		grid-template-columns: 1fr;
+	}
+}
