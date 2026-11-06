@@ -8,7 +8,7 @@
 | --- | --- |
 | `style.css` | هدر قالب (نام، نسخه، توضیح)؛ استایل واقعی در `assets/css` است |
 | `functions.php` | تعریف ثابت‌ها، بارگذاری `inc/*` به ترتیب وابستگی |
-| `header.php` | `<!doctype>`, `dir="rtl"`, تاپ‌بار، لوگو، ناوبری اصلی، دکمه‌های جستجو/مقایسه/منو، پنل جستجو |
+| `header.php` | `<!doctype>`, `dir="rtl"`, تاپ‌بار، لوگو، جستجوی زنده هدر، دکمه‌های مقایسه/منو، نوار تیره برندها با مگامنوی خودروهای هر برند، منوی کشویی موبایل |
 | `footer.php` | ستون‌های فوتر، منوی فوتر، لینک منبع، اسکریپت‌ها، `wp_footer()` |
 | `front-page.php` | ترکیب سکشن‌های خانه؛ بلوک آگهی‌های فروش بین هیرو و قیمت روز، سپس سکشن‌های Customizer |
 | `index.php` | فهرست پیش‌فرض نوشته‌ها |
@@ -28,10 +28,11 @@
 | فایل | وظیفه |
 | --- | --- |
 | `setup.php` | `add_theme_support`ها، جایگاه منو (`primary`, `footer`)، ساخت یک‌باره صفحات/منوها/دسته‌ها/مقالات راهنما، fallback منو (آگاه به location) |
-| `enqueue.php` | بارگذاری شرطی شش فایل CSS و پنج فایل JS، `preload` فونت، `LK` localize (`restUrl`, `ajaxUrl`, `nonce`, `strings`) |
+| `enqueue.php` | بارگذاری شرطی شش فایل CSS و هفت فایل JS، `preload` فونت، `LK` localize (`restUrl`, `ajaxUrl`, `nonce`, `strings`) |
 | `template-tags.php` | قرارداد نمایش: `lk_opt`, `lk_money`, `lk_change_badge`, `lk_section_head`, `lk_breadcrumb`, `lk_update_note`, `lk_pagination`, `lk_source_link`, `lk_toggle`, `lk_page_url` |
 | `icons.php` | اسپرایت SVG درون‌خطی و تابع `lk_icon()` |
-| `ajax.php` | فیلتر قیمت و مقایسه سمت سرور، تبدیل ورودی میلیون‌تومان، صفحه‌بندی قابل استفاده بدون JS |
+| `mega-menu.php` | داده مگامنوی هدر: `lk_mega_brands()` (برندهای پرمدل + ۸ خودرو با تصویر)، `lk_mega_brand_tabs()` (تب‌های زیربرند از فرزندان `lk_brand`)، `lk_mega_items()`، `lk_mega_cards()`، `lk_mega_vehicle_image()`، `lk_mega_placeholder()` و `lk_mega_all_brands()` |
+| `ajax.php` | فیلتر قیمت و مقایسه سمت سرور، تبدیل ورودی میلیون‌تومان، صفحه‌بندی قابل استفاده بدون JS، جستجوی زنده گروه‌بندی‌شده (`lk_live_search`: خودرو، برند، آگهی) |
 | `seo.php` | عنوان، description، Open Graph، canonical، `wp_robots`، JSON-LD |
 | `admin.php` | پنل Customizer «لامرد خودرو» و `lk_theme_defaults()` |
 
@@ -74,8 +75,9 @@ components/ page-hero, empty-data      (هدر صفحات داخلی، حالت 
 
 | فایل | بارگذاری | وظیفه |
 | --- | --- | --- |
-| `app.js` | همه صفحات | دراور موبایل، پنل جستجو، هدر چسبان، سبد مقایسه در `localStorage` |
-| `search.js` | صفحات دارای جستجو | پیشنهاد زنده با REST `/search` |
+| `app.js` | همه صفحات | دراور موبایل، هدر چسبان، سبد مقایسه در `localStorage` |
+| `search.js` | همه صفحات | جستجوی زنده هدر: سه گروه نتیجه، تصویر/مونوگرام، ناوبری با کیبورد و شیت جستجوی موبایل |
+| `mega-menu.js` | همه صفحات | مگامنوی برندها: باز شدن با هاور/کلیک، فقط یک پنل باز، Escape و بازگشت فوکوس؛ تب‌های زیربرند با ناوبری کیبورد |
 | `price-table.js` | صفحه قیمت | فیلتر AJAX، مرتب‌سازی، صفحه‌بندی، همگام‌سازی URL |
 | `compare.js` | صفحه مقایسه | افزودن/حذف خودرو، ساخت لینک اشتراک‌گذاری، جدول پویا |
 | `vehicle-chart.js` | تک‌خودرو | نمودار روند با Chart.js و حالت `insufficient` |

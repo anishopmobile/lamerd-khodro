@@ -115,52 +115,13 @@
 		btn.addEventListener('click', closeDrawer);
 	});
 
-	/* --------------------------------------------------------- search panel */
-	var searchPanel = qs('#lk-search-panel');
-	var searchToggle = qs('#lk-search-toggle');
-
-	function closeSearch() {
-		if (!searchPanel || searchPanel.hidden) {
-			return;
-		}
-		searchPanel.hidden = true;
-		if (searchToggle) {
-			searchToggle.setAttribute('aria-expanded', 'false');
-		}
-	}
-
-	if (searchToggle && searchPanel) {
-		searchToggle.addEventListener('click', function () {
-			var isHidden = searchPanel.hidden;
-			searchPanel.hidden = !isHidden;
-			searchToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-			if (isHidden) {
-				var input = qs('[data-lk-search-input]', searchPanel);
-				if (input) {
-					input.focus();
-				}
-			}
-		});
-	}
-
 	document.addEventListener('keydown', function (event) {
 		if (event.key !== 'Escape') {
 			return;
 		}
-		closeSearch();
 		if (drawer && !drawer.hidden) {
 			closeDrawer();
 		}
-	});
-
-	document.addEventListener('click', function (event) {
-		if (!searchPanel || searchPanel.hidden) {
-			return;
-		}
-		if (searchPanel.contains(event.target) || (searchToggle && searchToggle.contains(event.target))) {
-			return;
-		}
-		closeSearch();
 	});
 
 	/* ------------------------------------------------------- compare store */

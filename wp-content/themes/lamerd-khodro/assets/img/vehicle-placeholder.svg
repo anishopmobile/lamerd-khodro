@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="تصویری برای این خودرو ثبت نشده است">
+	<defs>
+		<linearGradient id="lkph-bg" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#f2f5f9" />
+			<stop offset="1" stop-color="#e4eaf1" />
+		</linearGradient>
+	</defs>
+	<rect width="400" height="300" fill="url(#lkph-bg)" />
+	<g fill="none" stroke="#c2cedd" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M64 190h272M78 190c0-14 8-24 20-26l24-7 26-30c6-7 14-11 23-11h54c9 0 17 4 23 11l26 30 24 7c12 2 20 12 20 26" />
+	</g>
+	<g fill="#c2cedd">
+		<circle cx="132" cy="192" r="18" />
+		<circle cx="268" cy="192" r="18" />
+	</g>
+	<g fill="#ffffff">
+		<circle cx="132" cy="192" r="7" />
+		<circle cx="268" cy="192" r="7" />
+	</g>
+	<g fill="none" stroke="#d6dfe8" stroke-width="5" stroke-linecap="round">
+		<path d="M164 156h76M150 172h108" />
+	</g>
+	<text x="200" y="242" text-anchor="middle" font-family="Vazirmatn, Tahoma, sans-serif" font-size="17" fill="#93a3b6">بدون تصویر</text>
+</svg>

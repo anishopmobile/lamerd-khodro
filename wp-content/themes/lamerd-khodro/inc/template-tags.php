@@ -68,13 +68,18 @@ function lk_change_badge( $price ) {
 		return '<span class="lk-change lk-change--suspect">—</span>';
 	}
 
-	if ( null === ( $price['change_percent'] ?? null ) && null === ( $price['change_amount'] ?? null ) ) {
+	$percent = $price['change_percent'] ?? null;
+	$amount  = $price['change_amount'] ?? null;
+
+	if ( null === $percent && null === $amount ) {
+		return '<span class="lk-change lk-change--empty">بدون تغییر</span>';
+	}
+
+	if ( ( null === $percent || 0.0 === (float) $percent ) && ( null === $amount || 0 === (int) $amount ) ) {
 		return '<span class="lk-change lk-change--empty">بدون تغییر</span>';
 	}
 
 	$class = lk_change_class( $price );
-	$percent = $price['change_percent'] ?? null;
-	$amount  = $price['change_amount'] ?? null;
 
 	$arrow = 'is-up' === $class ? '▲' : ( 'is-down' === $class ? '▼' : '•' );
 

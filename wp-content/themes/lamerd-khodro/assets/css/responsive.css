@@ -176,8 +176,44 @@
 
 /* 900px — desktop navigation, table instead of cards ------------------- */
 @media (min-width: 900px) {
-	.lk-nav {
+	.lk-brandbar {
 		display: block;
+	}
+
+	.lk-hsearch {
+		display: flex;
+		position: relative;
+		inset-inline: auto;
+		top: auto;
+		flex: 1 1 auto;
+		max-width: 440px;
+		margin-inline-start: 10px;
+		padding: 0;
+		background: transparent;
+		border: 0;
+		box-shadow: none;
+	}
+
+	.lk-hsearch__panel {
+		position: absolute;
+		inset-inline-start: 0;
+		top: calc(100% + 10px);
+		width: min(560px, 90vw);
+		max-height: min(74vh, 640px);
+		margin: 0;
+		background: #fff;
+		border: 1px solid var(--lk-line);
+		box-shadow: 0 24px 60px -30px rgba(10, 31, 51, 0.45);
+		z-index: 60;
+	}
+
+	.lk-hsearch-toggle {
+		display: none;
+	}
+
+	.lk-brandbar__nav .lk-nav__list .menu-item > a {
+		padding: 14px 7px;
+		font-size: 0.8rem;
 	}
 
 	.lk-menu-toggle {
@@ -427,5 +463,44 @@
 @media (min-width: 900px) {
 	.lk-hsale__lead:not(.has-photo) .lk-hsale__media {
 		aspect-ratio: 16 / 3.6;
+	}
+}
+
+/* Mega menu breakpoints ------------------------------------------------ */
+@media (min-width: 1200px) {
+	.lk-brandbar__popular {
+		display: flex;
+	}
+
+	.lk-brandbar__nav .lk-nav__list .menu-item > a {
+		padding: 16px 9px;
+		font-size: 0.84rem;
+	}
+
+	.lk-mega__grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.lk-mega__brands {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 899px) {
+	.lk-header__actions {
+		gap: 4px;
+	}
+
+	.lk-logo__name {
+		font-size: 0.98rem;
+	}
+
+	.lk-hs__row {
+		grid-template-columns: 36px minmax(0, 1fr) auto;
+	}
+
+	.lk-hs__media {
+		width: 36px;
+		height: 36px;
 	}
 }

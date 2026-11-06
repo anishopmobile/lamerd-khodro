@@ -61,6 +61,17 @@ function lk_enqueue_assets() {
 		)
 	);
 
+	wp_enqueue_script(
+		'lk-mega',
+		LK_THEME_URI . '/assets/js/mega-menu.js',
+		array( 'lk-app' ),
+		lk_asset_version( '/assets/js/mega-menu.js' ),
+		array(
+			'in_footer' => true,
+			'strategy'  => 'defer',
+		)
+	);
+
 	$needs_price_table = is_page_template( 'page-templates/page-prices.php' )
 		|| is_post_type_archive( 'lk_vehicle' )
 		|| is_page_template( 'page-templates/page-vehicles.php' )

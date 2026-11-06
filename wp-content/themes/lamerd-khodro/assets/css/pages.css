@@ -590,9 +590,11 @@
 /* Print ---------------------------------------------------------------- */
 @media print {
 	.lk-topbar,
+	.lk-head,
 	.lk-header,
+	.lk-brandbar,
+	.lk-hsearch,
 	.lk-footer,
-	.lk-search-panel,
 	.lk-drawer,
 	.lk-filters,
 	.lk-chips,

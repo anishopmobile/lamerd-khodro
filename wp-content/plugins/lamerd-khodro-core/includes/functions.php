@@ -214,7 +214,10 @@ function lk_vehicle_gallery( $post_id ) {
 }
 
 /**
- * Brands with counts.
+ * Top-level brands with counts.
+ *
+ * Sub-brands (child terms such as MVM under مدیران خودرو) are grouped inside
+ * their parent brand and are not listed as separate brands.
  *
  * @param int  $limit      Max terms (0 = all).
  * @param bool $hide_empty Hide empty.
@@ -224,6 +227,7 @@ function lk_get_brands( $limit = 0, $hide_empty = false ) {
 	$terms = get_terms(
 		array(
 			'taxonomy'   => 'lk_brand',
+			'parent'     => 0,
 			'hide_empty' => $hide_empty,
 			'orderby'    => 'count',
 			'order'      => 'DESC',
