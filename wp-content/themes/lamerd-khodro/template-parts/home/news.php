@@ -19,8 +19,6 @@ $lk_news = new WP_Query(
 if ( ! $lk_news->have_posts() ) {
 	return;
 }
-
-$lk_index = 0;
 ?>
 <section class="lk-section">
 	<div class="lk-container">
@@ -36,19 +34,11 @@ $lk_index = 0;
 		);
 		?>
 
-		<div class="lk-news-grid">
+		<div class="lk-news-grid lk-news-grid--home">
 			<?php
 			while ( $lk_news->have_posts() ) :
 				$lk_news->the_post();
-				get_template_part(
-					'template-parts/news/card',
-					null,
-					array(
-						'post'     => get_post(),
-						'featured' => 0 === $lk_index,
-					)
-				);
-				++$lk_index;
+				get_template_part( 'template-parts/news/card', null, array( 'post' => get_post() ) );
 			endwhile;
 			wp_reset_postdata();
 			?>

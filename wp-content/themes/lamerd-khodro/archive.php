@@ -1,6 +1,6 @@
 <?php
 /**
- * Generic archive (categories, tags, dates).
+ * Generic article archive (categories, tags, dates, authors).
  *
  * @package LamerdKhodro\Theme
  */
@@ -19,26 +19,7 @@ get_template_part(
 		'text'  => wp_strip_all_tags( $lk_description ),
 	)
 );
-?>
 
-<section class="lk-section">
-	<div class="lk-container">
-		<?php if ( have_posts() ) : ?>
-			<div class="lk-news-grid lk-news-grid--archive">
-				<?php
-				while ( have_posts() ) :
-					the_post();
-					get_template_part( 'template-parts/news/card', null, array( 'post' => get_post() ) );
-				endwhile;
-				?>
-			</div>
+get_template_part( 'template-parts/news/archive-section' );
 
-			<?php lk_pagination( $GLOBALS['wp_query'] ); ?>
-		<?php else : ?>
-			<?php get_template_part( 'template-parts/components/empty-data' ); ?>
-		<?php endif; ?>
-	</div>
-</section>
-
-<?php
 get_footer();

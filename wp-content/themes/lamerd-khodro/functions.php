@@ -9,7 +9,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'LK_THEME_VERSION', '1.5.0' );
+define( 'LK_THEME_VERSION', '1.6.0' );
 define( 'LK_THEME_PATH', get_template_directory() );
 define( 'LK_THEME_URI', get_template_directory_uri() );
 
@@ -19,5 +19,6 @@ require_once LK_THEME_PATH . '/inc/icons.php';
 require_once LK_THEME_PATH . '/inc/mega-menu.php';
 require_once LK_THEME_PATH . '/inc/template-tags.php';
 require_once LK_THEME_PATH . '/inc/ajax.php';
+require_once LK_THEME_PATH . '/inc/news.php';
 require_once LK_THEME_PATH . '/inc/seo.php';
 require_once LK_THEME_PATH . '/inc/admin.php';

@@ -401,3 +401,54 @@ function lk_ajax_live_search() {
 }
 add_action( 'wp_ajax_lk_live_search', 'lk_ajax_live_search' );
 add_action( 'wp_ajax_nopriv_lk_live_search', 'lk_ajax_live_search' );
+
+/**
+ * AJAX: live article search for the news sidebar.
+ *
+ * @return void
+ */
+function lk_ajax_news_search() {
+	check_ajax_referer( 'lk_public', 'nonce', false );
+
+	$term = isset( $_POST['term'] ) ? sanitize_text_field( wp_unslash( $_POST['term'] ) ) : '';
+	$term = trim( $term );
+
+	if ( '' === $term ) {
+		wp_send_json_error( array( 'message' => 'عبارت جستجو خالی است.' ), 400 );
+	}
+
+	$query = new WP_Query(
+		array(
+			'post_type'           => 'post',
+			'post_status'         => 'publish',
+			's'                   => $term,
+			'posts_per_page'      => 9,
+			'ignore_sticky_posts' => true,
+			'no_found_rows'       => false,
+		)
+	);
+
+	ob_start();
+	while ( $query->have_posts() ) :
+		$query->the_post();
+		get_template_part( 'template-parts/news/card', null, array( 'post' => get_post() ) );
+	endwhile;
+	wp_reset_postdata();
+	$html = (string) ob_get_clean();
+
+	$count = (int) $query->found_posts;
+
+	wp_send_json_success(
+		array(
+			'html'   => $html,
+			'count'  => $count,
+			'term'   => $term,
+			'label'  => $count
+				? sprintf( '%s نتیجه برای «%s»', lk_num( $count ), $term )
+				: sprintf( 'نتیجه‌ای برای «%s» پیدا نشد', $term ),
+			'moreUrl' => add_query_arg( 's', rawurlencode( $term ), lk_blog_url() ),
+		)
+	);
+}
+add_action( 'wp_ajax_lk_news_search', 'lk_ajax_news_search' );
+add_action( 'wp_ajax_nopriv_lk_news_search', 'lk_ajax_news_search' );

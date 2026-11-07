@@ -72,6 +72,19 @@ function lk_enqueue_assets() {
 		)
 	);
 
+	if ( is_home() || is_category() || is_tag() || is_date() || is_author() ) {
+		wp_enqueue_script(
+			'lk-news',
+			LK_THEME_URI . '/assets/js/news.js',
+			array( 'lk-app' ),
+			lk_asset_version( '/assets/js/news.js' ),
+			array(
+				'in_footer' => true,
+				'strategy'  => 'defer',
+			)
+		);
+	}
+
 	$needs_price_table = is_page_template( 'page-templates/page-prices.php' )
 		|| is_post_type_archive( 'lk_vehicle' )
 		|| is_page_template( 'page-templates/page-vehicles.php' )

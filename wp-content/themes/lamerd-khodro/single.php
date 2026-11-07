@@ -74,7 +74,7 @@ while ( have_posts() ) :
 				?>
 				<section class="lk-related-articles">
 					<h2 class="lk-panel__title">مطالب مرتبط</h2>
-					<div class="lk-news-grid lk-news-grid--pair">
+					<div class="lk-news-grid">
 						<?php
 						while ( $lk_related->have_posts() ) :
 							$lk_related->the_post();
