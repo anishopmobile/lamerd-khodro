@@ -32,6 +32,9 @@
 				format: 'YYYY/MM/DD',
 				autoClose: true,
 				initialValue: false,
+				// The field holds a Jalali string ("1405/08/17"). Without this the
+				// bundle reads it as a Gregorian date and the picker opens on 784.
+				initialValueType: 'persian',
 				observer: true,
 				responsive: true,
 				persianDigit: true,
