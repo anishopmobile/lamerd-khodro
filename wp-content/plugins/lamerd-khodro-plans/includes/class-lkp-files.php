@@ -28,11 +28,11 @@ class LKP_Files {
 	/**
 	 * Allowed MIME types per upload kind.
 	 *
-	 * @param string $type Upload kind: document|circular.
+	 * @param string $type Upload kind: document|circular|catalog.
 	 * @return array<string,string> MIME => extension.
 	 */
 	public static function allowed( $type ) {
-		if ( 'circular' === $type ) {
+		if ( 'document' !== $type ) {
 			return array(
 				'application/pdf' => 'pdf',
 				'image/jpeg'      => 'jpg',
@@ -53,7 +53,7 @@ class LKP_Files {
 	 * @return int
 	 */
 	public static function max_size( $type ) {
-		return 'circular' === $type ? self::CIRCULAR_MAX : self::DOCUMENT_MAX;
+		return 'document' === $type ? self::DOCUMENT_MAX : self::CIRCULAR_MAX;
 	}
 
 	/**
@@ -104,11 +104,11 @@ class LKP_Files {
 	 * Validate and store one uploaded file.
 	 *
 	 * @param array  $file Entry from $_FILES.
-	 * @param string $type document|circular.
+	 * @param string $type document|circular|catalog.
 	 * @return array{stored:string,name:string,mime:string,size:int}|WP_Error
 	 */
 	public static function store( $file, $type = 'document' ) {
-		$type = 'circular' === $type ? 'circular' : 'document';
+		$type = in_array( $type, array( 'circular', 'catalog' ), true ) ? $type : 'document';
 
 		if ( ! is_array( $file ) || ! isset( $file['tmp_name'], $file['error'], $file['size'], $file['name'] ) ) {
 			return new WP_Error( 'lkp_no_file', 'فایلی ارسال نشده است.' );
@@ -214,9 +214,10 @@ class LKP_Files {
 	 *
 	 * @param string $stored        Stored basename.
 	 * @param string $original_name Download name.
+	 * @param string $disposition   inline|attachment.
 	 * @return void
 	 */
-	public static function stream( $stored, $original_name = '' ) {
+	public static function stream( $stored, $original_name = '', $disposition = 'inline' ) {
 		$path = self::path( $stored );
 
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
@@ -238,7 +239,7 @@ class LKP_Files {
 		header( 'Content-Type: ' . $mime );
 		header( 'Content-Length: ' . (string) filesize( $path ) );
 		header( 'X-Content-Type-Options: nosniff' );
-		header( 'Content-Disposition: inline; filename="' . rawurlencode( $name ) . '"' );
+		header( 'Content-Disposition: ' . ( 'attachment' === $disposition ? 'attachment' : 'inline' ) . '; filename="' . rawurlencode( $name ) . '"' );
 		header( 'X-Robots-Tag: noindex, nofollow' );
 
 		readfile( $path );

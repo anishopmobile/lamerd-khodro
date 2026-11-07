@@ -25,10 +25,11 @@ class LKP_Frontend {
 	 * @return void
 	 */
 	public static function init() {
-		add_action( 'lk_listings_before', array( __CLASS__, 'render_section_contained' ) );
 		add_action( 'lk_home_after_hero', array( __CLASS__, 'render_section' ) );
 		add_shortcode( 'lk_plans', array( __CLASS__, 'shortcode' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+		add_action( 'admin_post_lkp_plan_file', array( __CLASS__, 'serve_plan_file' ) );
+		add_action( 'admin_post_nopriv_lkp_plan_file', array( __CLASS__, 'serve_plan_file' ) );
 	}
 
 	/**
@@ -41,12 +42,40 @@ class LKP_Frontend {
 	}
 
 	/**
-	 * Same section where the theme already wraps content in .lk-container.
+	 * Stream a plan attachment (circular or catalog) to any visitor.
+	 *
+	 * Only files belonging to published plans are served, and the link is
+	 * nonce protected so it cannot be used to enumerate the private folder.
 	 *
 	 * @return void
 	 */
-	public static function render_section_contained() {
-		self::render( true, false );
+	public static function serve_plan_file() {
+		$plan_id = isset( $_GET['plan'] ) ? absint( $_GET['plan'] ) : 0;
+		$kind    = isset( $_GET['file'] ) ? sanitize_key( wp_unslash( $_GET['file'] ) ) : '';
+		$nonce   = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+
+		if ( ! $plan_id || ! LKP_Plans::is_file_kind( $kind ) ) {
+			wp_die( 'فایل یافت نشد.', 'فایل یافت نشد', array( 'response' => 404 ) );
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'lkp_plan_file_' . $plan_id . '_' . $kind ) ) {
+			wp_die( 'دسترسی مجاز نیست.', 'دسترسی مجاز نیست', array( 'response' => 403 ) );
+		}
+
+		$plan = get_post( $plan_id );
+		$ok   = $plan && LKP_Plans::POST_TYPE === $plan->post_type
+			&& ( 'publish' === $plan->post_status || current_user_can( LKP_CAP ) );
+
+		if ( ! $ok ) {
+			wp_die( 'فایل یافت نشد.', 'فایل یافت نشد', array( 'response' => 404 ) );
+		}
+
+		$file = LKP_Plans::file( $plan_id, $kind );
+		if ( empty( $file['stored'] ) ) {
+			wp_die( 'فایل یافت نشد.', 'فایل یافت نشد', array( 'response' => 404 ) );
+		}
+
+		LKP_Files::stream( (string) $file['stored'], (string) ( $file['name'] ?? '' ), 'attachment' );
 	}
 
 	/**
@@ -99,6 +128,7 @@ class LKP_Frontend {
 				'dates'       => $dates,
 				'deadline'    => $deadline,
 				'can_request' => 'live' === $state,
+				'files'       => LKP_Plans::files( $plan->ID ),
 			);
 		}
 

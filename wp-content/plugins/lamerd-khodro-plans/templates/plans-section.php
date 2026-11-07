@@ -115,6 +115,28 @@ $lkp_wrap = ! isset( $wrap ) || $wrap;
 							<?php endif; ?>
 						</div>
 
+						<?php if ( ! empty( $lkp_card['files'] ) ) : ?>
+							<div class="lkp-plan__files">
+								<?php foreach ( $lkp_card['files'] as $lkp_file ) : ?>
+									<a
+										class="lkp-file-link"
+										href="<?php echo esc_url( $lkp_file['url'] ); ?>"
+										target="_blank"
+										rel="noopener"
+										download
+									>
+										<span class="lkp-file-link__icon" aria-hidden="true">⇩</span>
+										<span class="lkp-file-link__text">
+											<b><?php echo esc_html( $lkp_file['label'] ); ?></b>
+											<?php if ( $lkp_file['size'] > 0 ) : ?>
+												<small><?php echo esc_html( size_format( $lkp_file['size'] ) ); ?></small>
+											<?php endif; ?>
+										</span>
+									</a>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+
 						<?php if ( $lkp_card['can_request'] ) : ?>
 							<button
 								type="button"

@@ -526,25 +526,6 @@ class LKP_Requests {
 	}
 
 	/**
-	 * Unique URL for a plan circular.
-	 *
-	 * @param int $plan_id Plan ID.
-	 * @return string
-	 */
-	public static function circular_url( $plan_id ) {
-		$plan_id = (int) $plan_id;
-
-		return add_query_arg(
-			array(
-				'action'   => 'lkp_circular',
-				'plan'     => $plan_id,
-				'_wpnonce' => wp_create_nonce( 'lkp_circular_' . $plan_id ),
-			),
-			admin_url( 'admin-post.php' )
-		);
-	}
-
-	/**
 	 * Delete a request and its documents.
 	 *
 	 * @param int $request_id Request ID.

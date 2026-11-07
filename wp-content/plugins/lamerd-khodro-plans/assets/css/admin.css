@@ -247,6 +247,11 @@ body.rtl .lkp-switch input:checked + span::after {
 	font-size: 13px;
 }
 
+.lkp-file > span {
+	color: #5b6b7a;
+	font-size: 12px;
+}
+
 .lkp-file__remove {
 	display: inline-flex;
 	align-items: center;

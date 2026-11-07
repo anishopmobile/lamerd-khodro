@@ -85,6 +85,7 @@ class LKP_Plans {
 			'end_ts'    => '_lkp_end_ts',
 			'images'    => '_lkp_images',
 			'circular'  => '_lkp_circular',
+			'catalog'   => '_lkp_catalog',
 		);
 	}
 
@@ -103,7 +104,8 @@ class LKP_Plans {
 			'start_ts'  => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
 			'end_ts'    => array( 'type' => 'integer', 'sanitize_callback' => 'absint' ),
 			'images'    => array( 'type' => 'array', 'sanitize_callback' => array( __CLASS__, 'sanitize_ids' ) ),
-			'circular'  => array( 'type' => 'array', 'sanitize_callback' => array( __CLASS__, 'sanitize_circular' ) ),
+			'circular'  => array( 'type' => 'array', 'sanitize_callback' => array( __CLASS__, 'sanitize_file' ) ),
+			'catalog'   => array( 'type' => 'array', 'sanitize_callback' => array( __CLASS__, 'sanitize_file' ) ),
 		);
 
 		foreach ( $entry as $key => $args ) {
@@ -160,19 +162,19 @@ class LKP_Plans {
 	}
 
 	/**
-	 * Sanitize the stored circular descriptor.
+	 * Sanitize a stored private file descriptor.
 	 *
 	 * @param mixed $value Raw value.
 	 * @return array<string,mixed>
 	 */
-	public static function sanitize_circular( $value ) {
+	public static function sanitize_file( $value ) {
 		if ( ! is_array( $value ) || empty( $value['stored'] ) ) {
 			return array();
 		}
 
 		return array(
 			'stored' => basename( (string) $value['stored'] ),
-			'name'   => sanitize_text_field( (string) ( $value['name'] ?? 'بخشنامه' ) ),
+			'name'   => sanitize_text_field( (string) ( $value['name'] ?? 'فایل طرح' ) ),
 			'mime'   => sanitize_text_field( (string) ( $value['mime'] ?? '' ) ),
 			'size'   => absint( $value['size'] ?? 0 ),
 		);
@@ -325,8 +327,96 @@ class LKP_Plans {
 	 * @return array<string,mixed>
 	 */
 	public static function circular( $plan_id ) {
-		$value = get_post_meta( (int) $plan_id, self::meta_keys()['circular'], true );
+		return self::file( $plan_id, 'circular' );
+	}
+
+	/**
+	 * Product catalog file descriptor.
+	 *
+	 * @param int $plan_id Plan ID.
+	 * @return array<string,mixed>
+	 */
+	public static function catalog( $plan_id ) {
+		return self::file( $plan_id, 'catalog' );
+	}
+
+	/**
+	 * Whether a key is a downloadable plan file.
+	 *
+	 * @param string $kind circular|catalog.
+	 * @return bool
+	 */
+	public static function is_file_kind( $kind ) {
+		return in_array( (string) $kind, array( 'circular', 'catalog' ), true );
+	}
+
+	/**
+	 * Stored descriptor of a plan file.
+	 *
+	 * @param int    $plan_id Plan ID.
+	 * @param string $kind    circular|catalog.
+	 * @return array<string,mixed>
+	 */
+	public static function file( $plan_id, $kind ) {
+		if ( ! self::is_file_kind( $kind ) ) {
+			return array();
+		}
+
+		$keys  = self::meta_keys();
+		$value = get_post_meta( (int) $plan_id, $keys[ $kind ], true );
 		return is_array( $value ) ? $value : array();
+	}
+
+	/**
+	 * Public download URL for a plan file.
+	 *
+	 * @param int    $plan_id Plan ID.
+	 * @param string $kind    circular|catalog.
+	 * @return string
+	 */
+	public static function file_url( $plan_id, $kind ) {
+		$plan_id = (int) $plan_id;
+
+		return add_query_arg(
+			array(
+				'action'   => 'lkp_plan_file',
+				'plan'     => $plan_id,
+				'file'     => $kind,
+				'_wpnonce' => wp_create_nonce( 'lkp_plan_file_' . $plan_id . '_' . $kind ),
+			),
+			admin_url( 'admin-post.php' )
+		);
+	}
+
+	/**
+	 * Downloadable files of a plan with labels, ready for the front end.
+	 *
+	 * @param int $plan_id Plan ID.
+	 * @return array<int,array{kind:string,label:string,url:string,name:string,size:int}>
+	 */
+	public static function files( $plan_id ) {
+		$out    = array();
+		$labels = array(
+			'circular' => 'دریافت بخشنامهٔ طرح',
+			'catalog'  => 'دریافت کاتالوگ محصول',
+		);
+
+		foreach ( $labels as $kind => $label ) {
+			$file = self::file( $plan_id, $kind );
+			if ( empty( $file['stored'] ) ) {
+				continue;
+			}
+
+			$out[] = array(
+				'kind'  => $kind,
+				'label' => $label,
+				'url'   => self::file_url( $plan_id, $kind ),
+				'name'  => (string) ( $file['name'] ?? $label ),
+				'size'  => (int) ( $file['size'] ?? 0 ),
+			);
+		}
+
+		return $out;
 	}
 
 	/**

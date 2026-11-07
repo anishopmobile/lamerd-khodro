@@ -249,6 +249,62 @@
 	background: #f2fbf6;
 }
 
+.lkp-plan__files {
+	display: grid;
+	gap: 8px;
+}
+
+.lkp-file-link {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 12px;
+	border: 1px solid var(--lkp-line);
+	border-radius: 12px;
+	background: #fff;
+	color: var(--lkp-ink);
+	text-decoration: none;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.lkp-file-link:hover,
+.lkp-file-link:focus-visible {
+	border-color: var(--lkp-accent);
+	background: #fff8f1;
+}
+
+.lkp-file-link__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var(--lkp-surface);
+	color: var(--lkp-accent-deep);
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+.lkp-file-link__text {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 2px 8px;
+	font-size: 0.8125rem;
+	line-height: 1.7;
+}
+
+.lkp-file-link__text b {
+	font-weight: 700;
+}
+
+.lkp-file-link__text small {
+	color: #5a6b7a;
+	font-size: 0.75rem;
+}
+
 /* Buttons */
 
 .lkp-btn {

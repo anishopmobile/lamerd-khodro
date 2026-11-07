@@ -22,7 +22,6 @@ class LKP_Admin {
 		add_action( 'save_post_' . LKP_Plans::POST_TYPE, array( __CLASS__, 'save_plan' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_action( 'admin_post_lkp_document', array( __CLASS__, 'serve_document' ) );
-		add_action( 'admin_post_lkp_circular', array( __CLASS__, 'serve_circular' ) );
 		add_action( 'admin_post_lkp_status', array( __CLASS__, 'handle_status' ) );
 		add_action( 'admin_post_lkp_export', array( __CLASS__, 'export_csv' ) );
 
@@ -78,7 +77,6 @@ class LKP_Admin {
 		$company  = (string) get_post_meta( $post->ID, $keys['company'], true );
 		$active   = LKP_Plans::is_enabled( $post->ID );
 		$images   = LKP_Plans::image_ids( $post->ID );
-		$circular = LKP_Plans::circular( $post->ID );
 		$state    = LKP_Plans::state( $post->ID );
 		$dates    = array(
 			'active' => (int) get_post_meta( $post->ID, $keys['active_ts'], true ),
@@ -179,29 +177,47 @@ class LKP_Admin {
 				<p class="lkp-empty" data-lkp-media-empty <?php echo $images ? 'hidden' : ''; ?>>هنوز تصویری انتخاب نشده است.</p>
 			</div>
 
-			<div class="lkp-card">
-				<div class="lkp-card__head">
-					<div>
-						<h3>بخشنامهٔ طرح</h3>
-						<small>PDF یا تصویر؛ در پوشهٔ خصوصی ذخیره می‌شود و فقط مدیر به آن دسترسی دارد.</small>
+			<?php
+			$file_boxes = array(
+				'circular' => array(
+					'title' => 'بخشنامهٔ طرح',
+					'hint'  => 'PDF یا تصویر؛ حداکثر ۱۰ مگابایت. در سایت زیر زمان باقی‌ماندهٔ کارت نمایش داده می‌شود و قابل دریافت است.',
+				),
+				'catalog'  => array(
+					'title' => 'کاتالوگ محصول',
+					'hint'  => 'PDF یا تصویر؛ حداکثر ۱۰ مگابایت. در سایت زیر زمان باقی‌ماندهٔ کارت نمایش داده می‌شود و قابل دریافت است.',
+				),
+			);
+			foreach ( $file_boxes as $kind => $box ) :
+				$file = LKP_Plans::file( $post->ID, $kind );
+				?>
+				<div class="lkp-card">
+					<div class="lkp-card__head">
+						<div>
+							<h3><?php echo esc_html( $box['title'] ); ?></h3>
+							<small>در پوشهٔ خصوصی ذخیره می‌شود و از طریق لینک امن کارت طرح در سایت دریافت می‌شود.</small>
+						</div>
 					</div>
+
+					<?php if ( ! empty( $file['stored'] ) ) : ?>
+						<p class="lkp-file">
+							<a href="<?php echo esc_url( LKP_Plans::file_url( $post->ID, $kind ) ); ?>" target="_blank" rel="noopener">
+								<?php echo esc_html( $file['name'] ? $file['name'] : $box['title'] ); ?>
+							</a>
+							<?php if ( ! empty( $file['size'] ) ) : ?>
+								<span><?php echo esc_html( size_format( (int) $file['size'] ) ); ?></span>
+							<?php endif; ?>
+							<label class="lkp-file__remove">
+								<input type="checkbox" name="lkp_<?php echo esc_attr( $kind ); ?>_remove" value="1">
+								حذف فایل فعلی
+							</label>
+						</p>
+					<?php endif; ?>
+
+					<input type="file" name="lkp_<?php echo esc_attr( $kind ); ?>_file" accept="application/pdf,image/jpeg,image/png">
+					<p class="lkp-hint"><?php echo esc_html( $box['hint'] ); ?></p>
 				</div>
-
-				<?php if ( ! empty( $circular['stored'] ) ) : ?>
-					<p class="lkp-file">
-						<a href="<?php echo esc_url( LKP_Requests::circular_url( $post->ID ) ); ?>" target="_blank" rel="noopener">
-							<?php echo esc_html( $circular['name'] ? $circular['name'] : 'بخشنامه' ); ?>
-						</a>
-						<label class="lkp-file__remove">
-							<input type="checkbox" name="lkp_circular_remove" value="1">
-							حذف فایل فعلی
-						</label>
-					</p>
-				<?php endif; ?>
-
-				<input type="file" name="lkp_circular_file" accept="application/pdf,image/jpeg,image/png">
-				<p class="lkp-hint">حداکثر ۱۰ مگابایت. فایل جدید جای فایل قبلی را می‌گیرد.</p>
-			</div>
+			<?php endforeach; ?>
 		</div>
 		<?php
 	}
@@ -371,25 +387,31 @@ class LKP_Admin {
 			}
 		}
 
-		// Circular upload / removal.
-		if ( ! empty( $_POST['lkp_circular_remove'] ) ) {
-			$current = LKP_Plans::circular( $post_id );
-			if ( ! empty( $current['stored'] ) ) {
-				LKP_Files::delete( (string) $current['stored'] );
-			}
-			update_post_meta( $post_id, $keys['circular'], array() );
-		}
+		// Circular and catalog uploads / removals.
+		foreach ( array( 'circular', 'catalog' ) as $kind ) {
+			$remove = isset( $_POST[ 'lkp_' . $kind . '_remove' ] );
+			$upload = isset( $_FILES[ 'lkp_' . $kind . '_file' ] ) && is_array( $_FILES[ 'lkp_' . $kind . '_file' ] )
+				&& UPLOAD_ERR_NO_FILE !== (int) $_FILES[ 'lkp_' . $kind . '_file' ]['error'];
 
-		if ( isset( $_FILES['lkp_circular_file'] ) && is_array( $_FILES['lkp_circular_file'] ) && UPLOAD_ERR_NO_FILE !== (int) $_FILES['lkp_circular_file']['error'] ) {
-			$file = LKP_Files::store( $_FILES['lkp_circular_file'], 'circular' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			if ( is_wp_error( $file ) ) {
-				set_transient( 'lkp_notice_' . get_current_user_id(), array( 'type' => 'error', 'text' => $file->get_error_message() ), 60 );
-			} else {
-				$current = LKP_Plans::circular( $post_id );
+			if ( $remove ) {
+				$current = LKP_Plans::file( $post_id, $kind );
 				if ( ! empty( $current['stored'] ) ) {
 					LKP_Files::delete( (string) $current['stored'] );
 				}
-				update_post_meta( $post_id, $keys['circular'], $file );
+				update_post_meta( $post_id, $keys[ $kind ], array() );
+			}
+
+			if ( $upload ) {
+				$file = LKP_Files::store( $_FILES[ 'lkp_' . $kind . '_file' ], $kind ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				if ( is_wp_error( $file ) ) {
+					set_transient( 'lkp_notice_' . get_current_user_id(), array( 'type' => 'error', 'text' => $file->get_error_message() ), 60 );
+				} else {
+					$current = LKP_Plans::file( $post_id, $kind );
+					if ( ! empty( $current['stored'] ) ) {
+						LKP_Files::delete( (string) $current['stored'] );
+					}
+					update_post_meta( $post_id, $keys[ $kind ], $file );
+				}
 			}
 		}
 
@@ -552,8 +574,10 @@ class LKP_Admin {
 			case 'lkp_media':
 				$images   = count( LKP_Plans::image_ids( $post_id ) );
 				$circular = LKP_Plans::circular( $post_id );
+				$catalog  = LKP_Plans::catalog( $post_id );
 				echo esc_html( LKP_Jalali::persian_digits( $images ) . ' تصویر' );
 				echo $circular ? ' · <span class="dashicons dashicons-media-document" title="بخشنامه دارد"></span>' : '';
+				echo $catalog ? ' · <span class="dashicons dashicons-book" title="کاتالوگ دارد"></span>' : '';
 				break;
 		}
 	}
@@ -749,28 +773,6 @@ class LKP_Admin {
 		}
 
 		LKP_Files::stream( (string) $docs[ $index ]['stored'], (string) ( $docs[ $index ]['name'] ?? '' ) );
-	}
-
-	/**
-	 * Stream a plan circular.
-	 *
-	 * @return void
-	 */
-	public static function serve_circular() {
-		$plan_id = isset( $_GET['plan'] ) ? absint( $_GET['plan'] ) : 0;
-
-		if ( ! $plan_id || ! current_user_can( LKP_CAP ) ) {
-			wp_die( 'دسترسی مجاز نیست.', '', array( 'response' => 403 ) );
-		}
-
-		check_admin_referer( 'lkp_circular_' . $plan_id );
-
-		$circular = LKP_Plans::circular( $plan_id );
-		if ( empty( $circular['stored'] ) ) {
-			wp_die( 'فایل یافت نشد.', '', array( 'response' => 404 ) );
-		}
-
-		LKP_Files::stream( (string) $circular['stored'], (string) ( $circular['name'] ?? 'بخشنامه' ) );
 	}
 
 	/**
