@@ -14,6 +14,16 @@
 	var strings = data.strings || {};
 	var noImage = data.noImage || '';
 
+	/* -------------------------------------------------------------- Uploads */
+
+	// WordPress prints the plan form without an enctype, so the browser posts it
+	// urlencoded, silently drops the circular/catalog file inputs and $_FILES is
+	// empty in save_plan(). Multipart is required for those boxes to upload.
+	var postForm = document.getElementById( 'post' );
+	if ( postForm && 'multipart/form-data' !== postForm.getAttribute( 'enctype' ) ) {
+		postForm.setAttribute( 'enctype', 'multipart/form-data' );
+	}
+
 	/* ---------------------------------------------------------------- Dates */
 
 	function initDates() {
