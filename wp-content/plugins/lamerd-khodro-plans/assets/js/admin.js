@@ -4,6 +4,12 @@
 ( function ( $ ) {
 	'use strict';
 
+	// The datepicker bundle references the global `$`, but WordPress ships jQuery in
+	// no-conflict mode, so the picker throws before it can wrap the inputs.
+	if ( ! window.$ ) {
+		window.$ = window.jQuery;
+	}
+
 	var data = window.LKP_ADMIN || { strings: {} };
 	var strings = data.strings || {};
 	var noImage = data.noImage || '';
@@ -11,12 +17,18 @@
 	/* ---------------------------------------------------------------- Dates */
 
 	function initDates() {
-		if ( ! $.fn.pDatepicker ) {
+		if ( ! $.fn.pDatepicker || ! $.fn.persianDatepicker ) {
 			return;
 		}
 
 		$( '.lkp-date' ).each( function () {
-			$( this ).pDatepicker( {
+			var input = $( this );
+
+			if ( input.data( 'lkp-picker-ready' ) ) {
+				return;
+			}
+
+			input.data( 'lkp-picker-ready', true ).pDatepicker( {
 				format: 'YYYY/MM/DD',
 				autoClose: true,
 				initialValue: false,

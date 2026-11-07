@@ -48,6 +48,17 @@
 	font-size: 15px;
 }
 
+.lkp-date {
+	cursor: pointer;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Jalali datepicker popup above the editor. */
+.datepicker-plot-area {
+	z-index: 100000;
+	font-family: inherit;
+}
+
 .lkp-time {
 	display: flex;
 	align-items: center;

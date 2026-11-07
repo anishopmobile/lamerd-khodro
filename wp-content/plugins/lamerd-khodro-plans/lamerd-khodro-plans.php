@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Lamerd Khodro Plans
  * Description:       طرح‌های فروش و ثبت درخواست ثبت‌نام خودرو: مدیریت طرح‌ها با تاریخ شمسی، تصاویر، بخشنامه و کاتالوگ، نمایش طرح‌های فعال و غیرفعال در صفحهٔ اصلی و ثبت درخواست با AJAX.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Lamerd Khodro
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'LKP_VERSION', '1.1.0' );
+define( 'LKP_VERSION', '1.1.1' );
 define( 'LKP_FILE', __FILE__ );
 define( 'LKP_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LKP_URL', plugin_dir_url( __FILE__ ) );
