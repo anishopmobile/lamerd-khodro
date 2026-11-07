@@ -151,11 +151,17 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 	usort(
 		$children,
 		static function ( $a, $b ) {
-			$order_a = (int) get_term_meta( $a->term_id, '_lk_mega_order', true );
-			$order_b = (int) get_term_meta( $b->term_id, '_lk_mega_order', true );
+			$order_a = get_term_meta( $a->term_id, '_lk_mega_order', true );
+			$order_b = get_term_meta( $b->term_id, '_lk_mega_order', true );
+			// Tabs with an explicit order come first, in that order; the rest follow
+			// by number of models. Empty meta must not sort ahead of order 1.
+			$order_a = '' === $order_a ? 9999 : (int) $order_a;
+			$order_b = '' === $order_b ? 9999 : (int) $order_b;
+
 			if ( $order_a !== $order_b ) {
 				return $order_a <=> $order_b;
 			}
+
 			return (int) $b->count <=> (int) $a->count;
 		}
 	);
@@ -200,12 +206,37 @@ function lk_mega_brands( $limit = 4 ) {
 	$brands = lk_get_brands( 0, true );
 	$out    = array();
 
+	// One query for the whole brand tree: a brand is only a tab candidate when it
+	// has child terms with vehicles, so plain brands stay cheap.
+	$all_terms = get_terms(
+		array(
+			'taxonomy'   => 'lk_brand',
+			'hide_empty' => true,
+		)
+	);
+
+	$has_tabs = array();
+	if ( ! is_wp_error( $all_terms ) ) {
+		foreach ( $all_terms as $child ) {
+			if ( (int) $child->parent > 0 ) {
+				$has_tabs[ (int) $child->parent ] = true;
+			}
+		}
+	}
+
 	foreach ( $brands as $term ) {
 		if ( false !== mb_stripos( $term->name, 'سایر' ) ) {
 			continue;
 		}
 
-		$tabs  = lk_mega_brand_tabs( $term );
+		$tabs = isset( $has_tabs[ (int) $term->term_id ] ) ? lk_mega_brand_tabs( $term ) : array();
+
+		// The bar stays short, but a brand that groups its cars in tabs always
+		// gets a trigger so those tabs are reachable from the header.
+		if ( ! $tabs && count( $out ) >= $limit ) {
+			continue;
+		}
+
 		$items = array();
 		$total = (int) $term->count;
 
@@ -240,10 +271,6 @@ function lk_mega_brands( $limit = 4 ) {
 			'tabs'  => $tabs,
 			'total' => $total,
 		);
-
-		if ( count( $out ) >= $limit ) {
-			break;
-		}
 	}
 
 	return $out;
