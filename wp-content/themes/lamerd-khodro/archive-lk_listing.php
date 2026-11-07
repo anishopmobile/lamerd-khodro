@@ -25,6 +25,8 @@ get_template_part(
 
 <div class="lk-container lk-listings">
 
+	<?php do_action( 'lk_listings_before' ); ?>
+
 	<?php if ( $lk_featured_ids ) : ?>
 		<section class="lk-featured-band" aria-labelledby="lk-featured-title">
 			<div class="lk-featured-band__head">

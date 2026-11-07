@@ -10,6 +10,14 @@ defined( 'ABSPATH' ) || exit;
 get_header();
 
 get_template_part( 'template-parts/home/hero' );
+
+/**
+ * Fires between the hero and the "ready to sell" listings on the front page.
+ *
+ * Registration plans are printed here so buyers see them before the ads.
+ */
+do_action( 'lk_home_after_hero' );
+
 get_template_part( 'template-parts/home/sale-listings' );
 get_template_part( 'template-parts/home/price-board' );
 

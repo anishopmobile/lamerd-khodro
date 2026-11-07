@@ -1,0 +1,361 @@
+/**
+ * Plan editor and request screens in the WordPress admin.
+ */
+
+.lkp-box {
+	margin: 4px 0;
+	color: #16232e;
+}
+
+.lkp-grid {
+	display: grid;
+	gap: 14px;
+	margin-bottom: 14px;
+}
+
+.lkp-grid--two {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lkp-grid--three {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lkp-field {
+	display: grid;
+	gap: 5px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.lkp-field > span {
+	color: #0a1f33;
+}
+
+.lkp-field input[type="text"],
+.lkp-field input[type="time"],
+.lkp-field input[type="file"] {
+	width: 100%;
+	max-width: 100%;
+}
+
+.lkp-field small {
+	font-weight: 400;
+	color: #5a6b7a;
+}
+
+.lkp-field--static strong {
+	font-size: 15px;
+}
+
+.lkp-time {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.lkp-time span {
+	font-size: 12px;
+	font-weight: 400;
+	color: #5a6b7a;
+}
+
+.lkp-hint {
+	margin: 4px 0 14px;
+	font-size: 12px;
+	color: #5a6b7a;
+}
+
+.lkp-switch-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 6px 0 18px;
+	padding: 12px 14px;
+	border: 1px solid #e3e9ef;
+	border-radius: 10px;
+	background: #fbfcfd;
+}
+
+.lkp-switch-row b {
+	display: block;
+	font-size: 13px;
+}
+
+.lkp-switch-row small {
+	color: #5a6b7a;
+}
+
+.lkp-switch {
+	position: relative;
+	flex: 0 0 auto;
+	width: 42px;
+	height: 24px;
+}
+
+.lkp-switch input {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	margin: 0;
+	cursor: pointer;
+}
+
+.lkp-switch span {
+	position: absolute;
+	inset: 0;
+	border-radius: 999px;
+	background: #c9d3dc;
+	transition: background-color 0.15s ease;
+	pointer-events: none;
+}
+
+.lkp-switch span::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	inset-inline-start: 3px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #fff;
+	transition: transform 0.15s ease;
+}
+
+.lkp-switch input:checked + span {
+	background: #f26522;
+}
+
+.lkp-switch input:checked + span::after {
+	transform: translateX(-18px);
+}
+
+body.rtl .lkp-switch input:checked + span::after {
+	transform: translateX(-18px);
+}
+
+.lkp-switch input:focus-visible + span {
+	outline: 2px solid #f26522;
+	outline-offset: 2px;
+}
+
+.lkp-card {
+	margin: 0 0 16px;
+	padding: 14px;
+	border: 1px solid #e3e9ef;
+	border-radius: 12px;
+	background: #fff;
+}
+
+.lkp-card legend {
+	padding: 0 6px;
+	font-size: 13px;
+	font-weight: 700;
+	color: #0a1f33;
+}
+
+.lkp-card h3 {
+	margin: 0 0 4px;
+	font-size: 14px;
+}
+
+.lkp-card__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.lkp-card__head small {
+	color: #5a6b7a;
+}
+
+.lkp-media-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+	gap: 10px;
+}
+
+.lkp-media-item {
+	position: relative;
+	margin: 0;
+	aspect-ratio: 4 / 3;
+	border-radius: 8px;
+	overflow: hidden;
+	background: #f1f4f7;
+}
+
+.lkp-media-item img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.lkp-media-item figcaption,
+.lkp-media-main {
+	position: absolute;
+	inset-block-end: 4px;
+	inset-inline-start: 4px;
+	padding: 2px 7px;
+	border: 0;
+	border-radius: 999px;
+	background: #167a4a;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.lkp-media-main {
+	background: rgba(10, 31, 51, 0.82);
+	cursor: pointer;
+}
+
+.lkp-media-remove {
+	position: absolute;
+	inset-block-start: 4px;
+	inset-inline-end: 4px;
+	width: 24px;
+	height: 24px;
+	border: 0;
+	border-radius: 50%;
+	background: #b42323;
+	color: #fff;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.lkp-empty {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #7a8a97;
+}
+
+.lkp-file {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 10px;
+	padding: 8px 12px;
+	border: 1px solid #e3e9ef;
+	border-radius: 8px;
+	background: #fbfcfd;
+	font-size: 13px;
+}
+
+.lkp-file__remove {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: #b42323;
+}
+
+.lkp-badge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	background: #eef2f6;
+	color: #4a5c6d;
+	white-space: nowrap;
+}
+
+.lkp-badge--live {
+	background: #e8f7ef;
+	color: #167a4a;
+}
+
+.lkp-badge--future {
+	background: #fdf3e7;
+	color: #b45309;
+}
+
+.lkp-badge--expired {
+	background: #eef2f6;
+	color: #4a5c6d;
+}
+
+.lkp-badge--disabled {
+	background: #fdeeee;
+	color: #b42323;
+}
+
+.lkp-badge--new {
+	background: #eaf1fd;
+	color: #1d4ed8;
+}
+
+.lkp-table {
+	width: 100%;
+	margin: 4px 0 16px;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.lkp-table th,
+.lkp-table td {
+	padding: 9px 12px;
+	border-bottom: 1px solid #edf1f5;
+	text-align: start;
+	vertical-align: top;
+}
+
+.lkp-table th {
+	width: 32%;
+	background: #fbfcfd;
+	font-weight: 600;
+	color: #0a1f33;
+}
+
+.lkp-docs {
+	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 6px;
+}
+
+.lkp-docs li {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 8px 12px;
+	border: 1px solid #e3e9ef;
+	border-radius: 8px;
+	font-size: 13px;
+}
+
+.lkp-docs li span {
+	color: #5a6b7a;
+	font-size: 12px;
+}
+
+.lkp-thumb {
+	border-radius: 6px;
+	object-fit: cover;
+	background: #f1f4f7;
+	display: block;
+}
+
+/* Persian datepicker above the editor */
+.datepicker-plot-area {
+	z-index: 100000 !important;
+}
+
+/* Keep the plugin screens readable on small admin viewports */
+@media screen and (max-width: 782px) {
+	.lkp-grid--two,
+	.lkp-grid--three {
+		grid-template-columns: 1fr;
+	}
+
+	.lkp-table th {
+		width: 40%;
+	}
+}
