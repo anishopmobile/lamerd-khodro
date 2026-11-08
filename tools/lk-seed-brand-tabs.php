@@ -163,6 +163,13 @@ foreach ( $groups as $parent_slug => $tabs ) {
 			$current[] = (int) $parent->term_id;
 			wp_set_object_terms( $id, array_values( array_unique( $current ) ), 'lk_brand' );
 		}
+
+		// The tab keeps its own ordered vehicle list, so the menu does not depend
+		// on the vehicle's brand terms staying untouched.
+		if ( $term && ! $dry_run && $matched ) {
+			update_term_meta( $term->term_id, '_lk_mega_vehicles', array_keys( $matched ) );
+			update_term_meta( $term->term_id, '_lk_mega_tab', '1' );
+		}
 	}
 
 	$left = array_diff_key( $vehicles, $claimed );

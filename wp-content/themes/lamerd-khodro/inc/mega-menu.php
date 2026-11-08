@@ -16,6 +16,17 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * Term meta keys owned by the mega menu.
+ *
+ * The list of vehicles per tab lives in term meta (not in the post terms), so
+ * editing a vehicle in the admin can never empty a tab by accident.
+ */
+const LK_MEGA_ORDER_META    = '_lk_mega_order';
+const LK_MEGA_VISIBLE_META  = '_lk_mega_visible';
+const LK_MEGA_TAB_META      = '_lk_mega_tab';
+const LK_MEGA_VEHICLES_META = '_lk_mega_vehicles';
+
+/**
  * Photo URL of one vehicle for the mega menu cards.
  *
  * @param int    $post_id Vehicle ID.
@@ -80,6 +91,51 @@ function lk_mega_items( $term_id, $limit = 8, $exclude = array() ) {
 
 	$ids = get_posts( $args );
 
+	return lk_mega_build_items( $ids, $limit );
+}
+
+/**
+ * Cards built from a fixed, ordered list of vehicle IDs.
+ *
+ * Used by tabs whose vehicles were picked in the admin; unpublished or
+ * deleted vehicles are skipped and the saved order is kept.
+ *
+ * @param int[] $ids   Vehicle IDs in display order.
+ * @param int   $limit Maximum number of cards.
+ * @return array<int,array{id:int,title:string,url:string,image:string}>
+ */
+function lk_mega_items_by_ids( $ids, $limit = 8 ) {
+	$ids = array_values( array_filter( array_map( 'absint', (array) $ids ) ) );
+
+	if ( ! $ids ) {
+		return array();
+	}
+
+	$found = get_posts(
+		array(
+			'post_type'      => 'lk_vehicle',
+			'post__in'       => $ids,
+			'posts_per_page' => count( $ids ),
+			'orderby'        => 'post__in',
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+		)
+	);
+
+	return lk_mega_build_items( $found, $limit );
+}
+
+/**
+ * Turn vehicle IDs into mega menu cards.
+ *
+ * One card per distinct photo comes first so a panel is not filled with eight
+ * copies of the same model; the rest fill the remaining slots.
+ *
+ * @param int[] $ids   Vehicle IDs.
+ * @param int   $limit Maximum number of cards.
+ * @return array<int,array{id:int,title:string,url:string,image:string}>
+ */
+function lk_mega_build_items( $ids, $limit = 8 ) {
 	if ( ! $ids ) {
 		return array();
 	}
@@ -131,16 +187,22 @@ function lk_mega_items( $term_id, $limit = 8, $exclude = array() ) {
  * Tab order follows the `_lk_mega_order` term meta when set (handy for a
  * fixed order like MVM / Fownix / Xtrim), then the number of models.
  *
+ * Vehicles of a tab come from `_lk_mega_vehicles` (the list picked in the
+ * brand editor). Only when that list is empty the term's own vehicles are
+ * used, so a tab works with or without vehicle-to-sub-brand assignments.
+ *
  * @param WP_Term $brand Parent brand term.
  * @param int     $limit Maximum number of tabs.
  * @return array<int,array{term:WP_Term,items:array,total:int}>
  */
 function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
+	// Not hide_empty: a tab may list its vehicles in term meta while no vehicle
+	// is assigned to the sub-brand itself.
 	$children = get_terms(
 		array(
 			'taxonomy'   => 'lk_brand',
 			'parent'     => (int) $brand->term_id,
-			'hide_empty' => true,
+			'hide_empty' => false,
 		)
 	);
 
@@ -151,8 +213,8 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 	usort(
 		$children,
 		static function ( $a, $b ) {
-			$order_a = get_term_meta( $a->term_id, '_lk_mega_order', true );
-			$order_b = get_term_meta( $b->term_id, '_lk_mega_order', true );
+			$order_a = get_term_meta( $a->term_id, LK_MEGA_ORDER_META, true );
+			$order_b = get_term_meta( $b->term_id, LK_MEGA_ORDER_META, true );
 			// Tabs with an explicit order come first, in that order; the rest follow
 			// by number of models. Empty meta must not sort ahead of order 1.
 			$order_a = '' === $order_a ? 9999 : (int) $order_a;
@@ -169,7 +231,11 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 	$tabs = array();
 
 	foreach ( $children as $child ) {
-		$items = lk_mega_items( $child->term_id );
+		if ( '0' === get_term_meta( $child->term_id, LK_MEGA_TAB_META, true ) ) {
+			continue;
+		}
+
+		$items = lk_mega_tab_items( $child );
 		if ( ! $items ) {
 			continue;
 		}
@@ -186,6 +252,26 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 	}
 
 	return $tabs;
+}
+
+/**
+ * Vehicles of one tab, honoring the list saved in the term editor.
+ *
+ * @param WP_Term $term  Tab term.
+ * @param int     $limit Maximum number of cards.
+ * @return array<int,array{id:int,title:string,url:string,image:string}>
+ */
+function lk_mega_tab_items( WP_Term $term, $limit = 8 ) {
+	$saved = get_term_meta( $term->term_id, LK_MEGA_VEHICLES_META, true );
+
+	if ( is_array( $saved ) && $saved ) {
+		$items = lk_mega_items_by_ids( $saved, $limit );
+		if ( $items ) {
+			return $items;
+		}
+	}
+
+	return lk_mega_items( $term->term_id, $limit );
 }
 
 /**
@@ -206,12 +292,29 @@ function lk_mega_brands( $limit = 4 ) {
 	$brands = lk_get_brands( 0, true );
 	$out    = array();
 
-	// One query for the whole brand tree: a brand is only a tab candidate when it
-	// has child terms with vehicles, so plain brands stay cheap.
+	// The brand editor can put a brand first (or keep it out of the bar).
+	usort(
+		$brands,
+		static function ( $a, $b ) {
+			$order_a = get_term_meta( $a->term_id, LK_MEGA_ORDER_META, true );
+			$order_b = get_term_meta( $b->term_id, LK_MEGA_ORDER_META, true );
+			$order_a = '' === $order_a ? 9999 : (int) $order_a;
+			$order_b = '' === $order_b ? 9999 : (int) $order_b;
+
+			if ( $order_a !== $order_b ) {
+				return $order_a <=> $order_b;
+			}
+
+			return (int) $b->count <=> (int) $a->count;
+		}
+	);
+
+	// Tabs may list their vehicles in term meta, so a sub-brand with zero
+	// assigned posts still makes its parent a tab candidate.
 	$all_terms = get_terms(
 		array(
 			'taxonomy'   => 'lk_brand',
-			'hide_empty' => true,
+			'hide_empty' => false,
 		)
 	);
 
@@ -226,6 +329,10 @@ function lk_mega_brands( $limit = 4 ) {
 
 	foreach ( $brands as $term ) {
 		if ( false !== mb_stripos( $term->name, 'سایر' ) ) {
+			continue;
+		}
+
+		if ( '0' === get_term_meta( $term->term_id, LK_MEGA_VISIBLE_META, true ) ) {
 			continue;
 		}
 
