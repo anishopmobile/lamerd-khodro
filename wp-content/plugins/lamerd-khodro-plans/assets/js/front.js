@@ -11,9 +11,11 @@
 
 	var config = LKP;
 	var faDigits = '۰۱۲۳۴۵۶۷۸۹';
+	var arDigits = '٠١٢٣٤٥٦٧٨٩';
 	var selectedFiles = [];
 	var lastFocused = null;
 	var countdownTimer = null;
+	var requestNonce = config.nonce || '';
 
 	function fa( value ) {
 		return String( value ).replace( /\d/g, function ( d ) {
@@ -265,6 +267,181 @@
 		}
 	}
 
+	function latinDigits( value ) {
+		return String( value )
+			.replace( /[۰-۹]/g, function ( d ) {
+				return faDigits.indexOf( d );
+			} )
+			.replace( /[٠-٩]/g, function ( d ) {
+				return arDigits.indexOf( d );
+			} );
+	}
+
+	function textValue( value ) {
+		return String( value ).replace( /\s+/g, ' ' ).trim();
+	}
+
+	function isNameValue( value ) {
+		var text = textValue( value );
+		return text.length >= 3 && ! /\d/.test( latinDigits( text ) ) && /[A-Za-z\u0600-\u06FF\u200c]{2,}/.test( text );
+	}
+
+	function normalisePhone( value ) {
+		var digits = latinDigits( value ).replace( /\D+/g, '' );
+
+		if ( 0 === digits.indexOf( '0098' ) ) {
+			digits = '0' + digits.slice( 4 );
+		} else if ( 0 === digits.indexOf( '98' ) && digits.length > 10 ) {
+			digits = '0' + digits.slice( 2 );
+		} else if ( '9' === digits.charAt( 0 ) && 10 === digits.length ) {
+			digits = '0' + digits;
+		}
+
+		return digits;
+	}
+
+	function normaliseIban( value ) {
+		var iban = latinDigits( value ).toUpperCase().replace( /[^A-Z0-9]/g, '' );
+
+		if ( iban && 0 !== iban.indexOf( 'IR' ) ) {
+			iban = 'IR' + iban.replace( /^IR/, '' );
+		}
+
+		return iban;
+	}
+
+	function validIban( iban ) {
+		if ( ! /^IR\d{24}$/.test( iban ) ) {
+			return false;
+		}
+
+		var rearranged = iban.slice( 4 ) + iban.slice( 0, 4 );
+		var remainder = 0;
+
+		for ( var i = 0; i < rearranged.length; i++ ) {
+			var char = rearranged.charAt( i );
+			var digits = /[A-Z]/.test( char ) ? String( char.charCodeAt( 0 ) - 55 ) : char;
+
+			for ( var j = 0; j < digits.length; j++ ) {
+				remainder = ( remainder * 10 + Number( digits.charAt( j ) ) ) % 97;
+			}
+		}
+
+		return 1 === remainder;
+	}
+
+	function markInvalid( input ) {
+		if ( ! input ) {
+			return;
+		}
+
+		input.setAttribute( 'aria-invalid', 'true' );
+	}
+
+	function clearInvalid( input ) {
+		if ( ! input ) {
+			return;
+		}
+
+		input.removeAttribute( 'aria-invalid' );
+	}
+
+	function validateForm() {
+		var problems = [];
+		var field = function ( name ) {
+			return form.querySelector( '[name="' + name + '"]' );
+		};
+		var value = function ( name ) {
+			var input = field( name );
+			return input ? input.value : '';
+		};
+		var fail = function ( name, message ) {
+			problems.push( { input: field( name ), message: message } );
+		};
+
+		if ( ! isNameValue( value( 'name' ) ) ) {
+			fail( 'name', config.strings.invalidName );
+		}
+		if ( ! isNameValue( value( 'lastname' ) ) ) {
+			fail( 'lastname', config.strings.invalidLastname );
+		}
+		if ( textValue( value( 'address' ) ).length < 10 ) {
+			fail( 'address', config.strings.invalidAddress );
+		}
+		if ( ! /^09\d{9}$/.test( normalisePhone( value( 'phone' ) ) ) ) {
+			fail( 'phone', config.strings.invalidPhone );
+		}
+		if ( ! /^09\d{9}$/.test( normalisePhone( value( 'mobile_owner' ) ) ) ) {
+			fail( 'mobile_owner', config.strings.invalidPhone );
+		}
+		if ( ! /^\d{10}$/.test( latinDigits( value( 'postal' ) ).replace( /\D+/g, '' ) ) ) {
+			fail( 'postal', config.strings.invalidPostal );
+		}
+		if ( ! validIban( normaliseIban( value( 'shaba' ) ) ) ) {
+			fail( 'shaba', config.strings.invalidShaba );
+		}
+		if ( ! selectedFiles.length ) {
+			fail( 'documents', config.strings.needDocs );
+		}
+
+		return problems;
+	}
+
+	function refreshToken() {
+		if ( ! config.tokenUrl ) {
+			return Promise.resolve( false );
+		}
+
+		return fetch( config.tokenUrl, { credentials: 'same-origin', cache: 'no-store' } )
+			.then( function ( response ) {
+				return response.ok ? response.json() : null;
+			} )
+			.then( function ( payload ) {
+				if ( payload && payload.nonce ) {
+					requestNonce = payload.nonce;
+					return true;
+				}
+				return false;
+			} )
+			.catch( function () {
+				return false;
+			} );
+	}
+
+	function submitRequest( data, retried ) {
+		return fetch( config.restUrl, {
+			method: 'POST',
+			body: data,
+			headers: requestNonce ? { 'X-LKP-Nonce': requestNonce } : {},
+			credentials: 'same-origin',
+		} )
+			.then( function ( response ) {
+				return response
+					.json()
+					.catch( function () {
+						return null;
+					} )
+					.then( function ( payload ) {
+						return { status: response.status, payload: payload };
+					} );
+			} )
+			.then( function ( result ) {
+				var expired = result.payload && 'invalid_nonce' === result.payload.error;
+
+				// A cached page hands out an old token; retry once with a fresh one.
+				if ( expired && ! retried ) {
+					return refreshToken().then( function ( renewed ) {
+						if ( ! renewed ) {
+							return result;
+						}
+						return submitRequest( data, true );
+					} );
+				}
+
+				return result;
+			} );
+	}
+
 	function openRequest( button ) {
 		if ( ! modal || ! form ) {
 			return;
@@ -273,6 +450,9 @@
 		form.reset();
 		resetFiles();
 		showError( '' );
+		form.querySelectorAll( '[aria-invalid="true"]' ).forEach( clearInvalid );
+		// Cached pages can carry an old token; ask for a fresh one before submit.
+		refreshToken();
 
 		form.querySelector( '[name="plan_id"]' ).value = button.dataset.planId || '';
 		var opened = form.querySelector( '[data-lkp-opened]' );
@@ -329,12 +509,25 @@
 	}
 
 	if ( form ) {
+		form.addEventListener( 'input', function ( event ) {
+			if ( event.target.closest( 'input, textarea' ) ) {
+				clearInvalid( event.target );
+			}
+		} );
+
 		form.addEventListener( 'submit', function ( event ) {
 			event.preventDefault();
 			showError( '' );
 
-			if ( ! selectedFiles.length ) {
-				showError( config.strings.needDocs );
+			var problems = validateForm();
+			if ( problems.length ) {
+				problems.forEach( function ( problem ) {
+					markInvalid( problem.input );
+				} );
+				showError( problems[ 0 ].message );
+				if ( problems[ 0 ].input ) {
+					problems[ 0 ].input.focus();
+				}
 				return;
 			}
 
@@ -350,20 +543,13 @@
 				submitButton.textContent = config.strings.sending;
 			}
 
-			window
-				.fetch( config.restUrl, {
-					method: 'POST',
-					body: data,
-					headers: { 'X-LKP-Nonce': config.nonce },
-					credentials: 'same-origin',
-				} )
-				.then( function ( response ) {
-					return response.json().then( function ( payload ) {
-						return { ok: response.ok, payload: payload };
-					} );
-				} )
+			submitRequest( data, false )
 				.then( function ( result ) {
-					if ( ! result.ok || ! result.payload || ! result.payload.ok ) {
+					if ( ! result.payload || ! result.payload.ok ) {
+						if ( result.payload && 'invalid_nonce' === result.payload.error ) {
+							showError( config.strings.sessionExpired );
+							return;
+						}
 						var message = result.payload && result.payload.text ? result.payload.text : config.strings.genericError;
 						showError( message );
 						return;

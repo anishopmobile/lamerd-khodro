@@ -174,6 +174,7 @@ class LKP_Frontend {
 			'LKP',
 			array(
 				'restUrl'  => esc_url_raw( rest_url( 'lamerd-plans/v1/requests' ) ),
+				'tokenUrl' => esc_url_raw( rest_url( 'lamerd-plans/v1/token' ) ),
 				'nonce'    => wp_create_nonce( 'lkp_submit_request' ),
 				'maxFiles' => LKP_Requests::MAX_FILES,
 				'maxSize'  => LKP_Files::DOCUMENT_MAX,
@@ -188,6 +189,13 @@ class LKP_Frontend {
 					'needDocs'     => 'بارگذاری تصاویر مدارک الزامی است.',
 					'expired'      => 'مهلت ثبت‌نام این طرح به پایان رسید.',
 					'close'        => 'بستن',
+					'invalidName'  => 'نام را با حروف و کامل وارد کنید.',
+					'invalidLastname' => 'نام خانوادگی را با حروف و کامل وارد کنید.',
+					'invalidAddress'  => 'آدرس را کامل‌تر وارد کنید (حداقل ۱۰ نویسه).',
+					'invalidPhone'    => 'شمارهٔ تماس باید با ۰۹ شروع شود و ۱۱ رقم باشد.',
+					'invalidPostal'   => 'کد پستی باید ۱۰ رقم باشد.',
+					'invalidShaba'    => 'شمارهٔ شبا معتبر نیست؛ ۲۴ رقم بعد از IR را بررسی کنید.',
+					'sessionExpired'  => 'نشست شما منقضی شده است. صفحه را تازه کنید و دوباره تلاش کنید.',
 				),
 			)
 		);

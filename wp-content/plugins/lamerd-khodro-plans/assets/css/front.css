@@ -501,6 +501,12 @@
 	box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.15);
 }
 
+.lkp-field input[aria-invalid="true"],
+.lkp-field textarea[aria-invalid="true"] {
+	border-color: var(--lkp-red);
+	box-shadow: 0 0 0 3px rgba(198, 62, 62, 0.14);
+}
+
 .lkp-panel {
 	padding: 14px;
 	border: 1px solid var(--lkp-line);

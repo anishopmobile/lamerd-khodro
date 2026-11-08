@@ -15,6 +15,11 @@ class LKP_Requests {
 	const POST_TYPE = 'lk_plan_request';
 
 	/**
+	 * Nonce action of the public request form.
+	 */
+	const NONCE_ACTION = 'lkp_submit_request';
+
+	/**
 	 * Maximum number of documents per request.
 	 */
 	const MAX_FILES = 8;
@@ -144,6 +149,90 @@ class LKP_Requests {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		// Fresh form token for visitors with a cached copy of the page.
+		register_rest_route(
+			'lamerd-plans/v1',
+			'/token',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'rest_token' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
+
+	/**
+	 * Hand out a new form token.
+	 *
+	 * The token is a public CSRF value, not a secret, so it can be served to
+	 * anonymous visitors; it is never cached.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function rest_token() {
+		$response = new WP_REST_Response(
+			array(
+				'nonce' => wp_create_nonce( self::NONCE_ACTION ),
+			),
+			200
+		);
+
+		$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
+		$response->header( 'Pragma', 'no-cache' );
+
+		return $response;
+	}
+
+	/**
+	 * Check the form token.
+	 *
+	 * A visitor who is logged in renders the page with a token bound to their
+	 * session, while WordPress handles the REST request as anonymous (cookie
+	 * authentication needs the `wp_rest` nonce). The guest token is therefore
+	 * accepted as well, so a logged-in admin can submit the public form.
+	 *
+	 * @param string $nonce Submitted token.
+	 * @return bool
+	 */
+	public static function verify_nonce( $nonce ) {
+		$nonce = (string) $nonce;
+
+		if ( '' === $nonce ) {
+			return false;
+		}
+
+		if ( wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
+			return true;
+		}
+
+		return self::verify_guest_nonce( $nonce );
+	}
+
+	/**
+	 * Verify a token created for an anonymous visitor.
+	 *
+	 * Mirrors wp_create_nonce()/wp_verify_nonce() for user 0 with no session
+	 * token, across the current and previous nonce tick.
+	 *
+	 * @param string $nonce Submitted token.
+	 * @return bool
+	 */
+	private static function verify_guest_nonce( $nonce ) {
+		if ( ! preg_match( '/^[a-f0-9]{10}$/', $nonce ) ) {
+			return false;
+		}
+
+		$tick = (int) wp_nonce_tick();
+
+		for ( $i = $tick; $i >= $tick - 1; $i-- ) {
+			$expected = substr( wp_hash( $i . '|' . self::NONCE_ACTION . '|0|', 'nonce' ), -12, 10 );
+			if ( hash_equals( $expected, $nonce ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -158,7 +247,7 @@ class LKP_Requests {
 			$nonce = (string) $request->get_param( '_lkp_nonce' );
 		}
 
-		if ( ! wp_verify_nonce( $nonce, 'lkp_submit_request' ) ) {
+		if ( ! self::verify_nonce( $nonce ) ) {
 			return new WP_REST_Response(
 				array(
 					'ok'    => false,
@@ -166,6 +255,18 @@ class LKP_Requests {
 					'text'  => 'نشست شما منقضی شده است. صفحه را تازه کنید و دوباره تلاش کنید.',
 				),
 				403
+			);
+		}
+
+		// The body may have been dropped by PHP when it exceeded post_max_size.
+		if ( empty( $_POST ) && empty( $_FILES ) && ! empty( $_SERVER['CONTENT_LENGTH'] ) ) {
+			return new WP_REST_Response(
+				array(
+					'ok'    => false,
+					'error' => 'upload_too_large',
+					'text'  => 'حجم کل مدارک ارسالی بیش از حد مجاز سرور است. تصاویر کمتری انتخاب کنید یا حجم هر تصویر را کاهش دهید.',
+				),
+				413
 			);
 		}
 
@@ -234,13 +335,20 @@ class LKP_Requests {
 
 		$out = array();
 		foreach ( array_keys( $entry['name'] ) as $index ) {
-			$out[] = array(
+			$file = array(
 				'name'     => $entry['name'][ $index ] ?? '',
 				'type'     => $entry['type'][ $index ] ?? '',
 				'tmp_name' => $entry['tmp_name'][ $index ] ?? '',
 				'error'    => $entry['error'][ $index ] ?? UPLOAD_ERR_NO_FILE,
 				'size'     => $entry['size'][ $index ] ?? 0,
 			);
+
+			// Empty slots of a multi-file input must not fail the whole request.
+			if ( UPLOAD_ERR_NO_FILE === (int) $file['error'] || '' === (string) $file['tmp_name'] ) {
+				continue;
+			}
+
+			$out[] = $file;
 		}
 
 		return $out;
@@ -279,8 +387,16 @@ class LKP_Requests {
 		$postal   = preg_replace( '/\D+/', '', LKP_Jalali::latin_digits( (string) ( $fields['postal'] ?? '' ) ) );
 		$shaba    = strtoupper( str_replace( array( ' ', '-' ), '', LKP_Jalali::latin_digits( (string) ( $fields['shaba'] ?? '' ) ) ) );
 
-		if ( '' === $name || '' === $lastname || '' === $address ) {
-			return new WP_Error( 'invalid_input', 'نام، نام خانوادگی و آدرس را کامل وارد کنید.' );
+		if ( '' === $name || '' === $lastname ) {
+			return new WP_Error( 'invalid_input', 'نام و نام خانوادگی را کامل وارد کنید.' );
+		}
+
+		if ( ! self::is_person_name( $name ) || ! self::is_person_name( $lastname ) ) {
+			return new WP_Error( 'invalid_name', 'نام و نام خانوادگی باید فقط با حروف نوشته شود.' );
+		}
+
+		if ( mb_strlen( $address ) < 10 ) {
+			return new WP_Error( 'invalid_address', 'آدرس را کامل‌تر وارد کنید (حداقل ۱۰ نویسه).' );
 		}
 
 		if ( ! $phone || ! $mobile ) {
@@ -293,6 +409,10 @@ class LKP_Requests {
 
 		if ( ! preg_match( '/^IR\d{24}$/', $shaba ) ) {
 			return new WP_Error( 'invalid_shaba', 'شمارهٔ شبا باید با IR شروع شود و ۲۴ رقم داشته باشد.' );
+		}
+
+		if ( ! self::is_valid_iban( $shaba ) ) {
+			return new WP_Error( 'invalid_shaba', 'شمارهٔ شبا معتبر نیست؛ رقم‌ها را بررسی کنید.' );
 		}
 
 		if ( ! $docs ) {
@@ -388,6 +508,55 @@ class LKP_Requests {
 		$value = trim( preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value ) );
 
 		return mb_substr( (string) $value, 0, $max );
+	}
+
+	/**
+	 * Whether a value looks like a person name (letters, spaces, no digits).
+	 *
+	 * @param string $value Cleaned value.
+	 * @return bool
+	 */
+	private static function is_person_name( $value ) {
+		$value = trim( (string) $value );
+
+		if ( mb_strlen( $value ) < 2 ) {
+			return false;
+		}
+
+		if ( preg_match( '/\d/u', $value ) ) {
+			return false;
+		}
+
+		return (bool) preg_match( '/[\p{L}]{2,}/u', $value );
+	}
+
+	/**
+	 * Validate an Iranian IBAN (SHEBA) with the ISO 7064 mod 97 check.
+	 *
+	 * @param string $iban Normalised IBAN starting with IR.
+	 * @return bool
+	 */
+	public static function is_valid_iban( $iban ) {
+		$iban = strtoupper( (string) $iban );
+
+		if ( ! preg_match( '/^IR\d{24}$/', $iban ) ) {
+			return false;
+		}
+
+		$rearranged = substr( $iban, 4 ) . substr( $iban, 0, 4 );
+		$remainder  = 0;
+		$length     = strlen( $rearranged );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char   = $rearranged[ $i ];
+			$digits = ctype_alpha( $char ) ? (string) ( ord( $char ) - 55 ) : $char;
+
+			for ( $j = 0, $len = strlen( $digits ); $j < $len; $j++ ) {
+				$remainder = ( $remainder * 10 + (int) $digits[ $j ] ) % 97;
+			}
+		}
+
+		return 1 === $remainder;
 	}
 
 	/**
