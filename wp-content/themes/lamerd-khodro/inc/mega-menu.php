@@ -58,7 +58,7 @@ function lk_mega_placeholder() {
  *
  * @param int   $term_id Brand term ID.
  * @param int   $limit   Maximum number of cards.
- * @param array $exclude Term IDs to exclude from the query.
+ * @param int[] $exclude Vehicle IDs to leave out of the query.
  * @return array<int,array{id:int,title:string,url:string,image:string}>
  */
 function lk_mega_items( $term_id, $limit = 8, $exclude = array() ) {
@@ -79,14 +79,7 @@ function lk_mega_items( $term_id, $limit = 8, $exclude = array() ) {
 	);
 
 	if ( $exclude ) {
-		$args['tax_query'][] = array(
-			'taxonomy' => 'lk_brand',
-			'field'    => 'term_id',
-			'terms'    => array_map( 'intval', $exclude ),
-			'operator' => 'NOT IN',
-		);
-		// Keep the post itself out of the child terms it belongs to.
-		$args['tax_query'][0]['include_children'] = false;
+		$args['post__not_in'] = array_map( 'intval', $exclude );
 	}
 
 	$ids = get_posts( $args );
@@ -235,7 +228,8 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 			continue;
 		}
 
-		$items = lk_mega_tab_items( $child );
+		$ids   = lk_mega_tab_vehicle_ids( $child );
+		$items = lk_mega_build_items( $ids );
 		if ( ! $items ) {
 			continue;
 		}
@@ -243,7 +237,11 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 		$tabs[] = array(
 			'term'  => $child,
 			'items' => $items,
-			'total' => (int) $child->count,
+			'ids'   => $ids,
+			// The tab's own vehicle count, not the term count: the term counter
+			// drops to zero whenever a vehicle is saved in the admin and its
+			// sub-brand assignment is rewritten.
+			'total' => count( $ids ),
 		);
 
 		if ( count( $tabs ) >= (int) $limit ) {
@@ -255,6 +253,55 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
 }
 
 /**
+ * Vehicle IDs of one tab, honoring the list saved in the term editor.
+ *
+ * @param WP_Term $term  Tab term.
+ * @return int[]
+ */
+function lk_mega_tab_vehicle_ids( WP_Term $term ) {
+	$saved = get_term_meta( $term->term_id, LK_MEGA_VEHICLES_META, true );
+	$ids   = is_array( $saved ) ? array_values( array_filter( array_map( 'absint', $saved ) ) ) : array();
+
+	if ( $ids ) {
+		$found = get_posts(
+			array(
+				'post_type'      => 'lk_vehicle',
+				'post__in'       => $ids,
+				'posts_per_page' => count( $ids ),
+				'orderby'        => 'post__in',
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			)
+		);
+
+		if ( $found ) {
+			return array_map( 'intval', $found );
+		}
+	}
+
+	// No saved list: fall back to the vehicles assigned to the sub-brand.
+	$found = get_posts(
+		array(
+			'post_type'      => 'lk_vehicle',
+			'posts_per_page' => 200,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'tax_query'      => array(
+				array(
+					'taxonomy' => 'lk_brand',
+					'field'    => 'term_id',
+					'terms'    => (int) $term->term_id,
+				),
+			),
+		)
+	);
+
+	return array_map( 'intval', $found );
+}
+
+/**
  * Vehicles of one tab, honoring the list saved in the term editor.
  *
  * @param WP_Term $term  Tab term.
@@ -262,16 +309,7 @@ function lk_mega_brand_tabs( WP_Term $brand, $limit = 6 ) {
  * @return array<int,array{id:int,title:string,url:string,image:string}>
  */
 function lk_mega_tab_items( WP_Term $term, $limit = 8 ) {
-	$saved = get_term_meta( $term->term_id, LK_MEGA_VEHICLES_META, true );
-
-	if ( is_array( $saved ) && $saved ) {
-		$items = lk_mega_items_by_ids( $saved, $limit );
-		if ( $items ) {
-			return $items;
-		}
-	}
-
-	return lk_mega_items( $term->term_id, $limit );
+	return lk_mega_build_items( lk_mega_tab_vehicle_ids( $term ), $limit );
 }
 
 /**
@@ -348,9 +386,15 @@ function lk_mega_brands( $limit = 4 ) {
 		$total = (int) $term->count;
 
 		if ( $tabs ) {
-			// Vehicles kept on the parent brand but outside every sub-brand.
-			$child_ids = wp_list_pluck( wp_list_pluck( $tabs, 'term' ), 'term_id' );
-			$leftover  = lk_mega_items( $term->term_id, 8, $child_ids );
+			// Vehicles of the parent brand that no tab already lists. Excluding
+			// the tab's vehicles (not just its term) keeps a car from showing up
+			// twice when its sub-brand assignment was rewritten.
+			$tab_ids  = array();
+			foreach ( $tabs as $tab ) {
+				$tab_ids = array_merge( $tab_ids, isset( $tab['ids'] ) ? $tab['ids'] : wp_list_pluck( $tab['items'], 'id' ) );
+			}
+			$tab_ids  = array_values( array_unique( array_map( 'intval', $tab_ids ) ) );
+			$leftover = lk_mega_items( $term->term_id, 8, $tab_ids );
 
 			if ( $leftover ) {
 				$tabs[] = array(

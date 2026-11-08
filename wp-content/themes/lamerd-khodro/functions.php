@@ -9,7 +9,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'LK_THEME_VERSION', '1.6.1' );
+define( 'LK_THEME_VERSION', '1.6.2' );
 define( 'LK_THEME_PATH', get_template_directory() );
 define( 'LK_THEME_URI', get_template_directory_uri() );
 
