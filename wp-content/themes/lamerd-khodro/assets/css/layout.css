@@ -1392,6 +1392,80 @@
 	flex: none;
 }
 
+/* Hero instant search ---------------------------------------------------- */
+.lk-hero__searchwrap {
+	position: relative;
+	max-width: 540px;
+	margin-block-start: 26px;
+}
+
+.lk-hero__search {
+	margin-block-start: 0;
+}
+
+/* The panel drops past the hero edge, so the section must not clip it. */
+.lk-hero.is-search-open {
+	overflow: visible;
+}
+
+.lk-hero.is-search-open .lk-hero__glow {
+	display: none;
+}
+
+.lk-hero__panel {
+	position: absolute;
+	left: 0;
+	top: calc(100% + 10px);
+	width: 100%;
+	z-index: 60;
+	margin: 0;
+	max-height: min(56vh, 420px);
+	overflow-y: auto;
+	background: #fff;
+	border: 1px solid var(--lk-line);
+	border-radius: var(--lk-radius);
+	padding: 6px;
+	box-shadow: 0 34px 60px -34px rgba(6, 23, 37, 0.55), 0 6px 18px -10px rgba(6, 23, 37, 0.25);
+	animation: lk-drop var(--lk-fast) var(--lk-ease);
+}
+
+.lk-hero__panel .lk-hs__row {
+	grid-template-columns: 44px minmax(0, 1fr) auto;
+	padding: 8px 10px;
+}
+
+.lk-hero__panel .lk-hs__media {
+	width: 44px;
+	height: 44px;
+}
+
+.lk-hero__panel .lk-hs__title {
+	font-size: 0.88rem;
+}
+
+.lk-hero__panel .lk-hs__empty {
+	padding: 20px 12px;
+}
+
+.lk-hs__mark {
+	background: var(--lk-accent-soft);
+	color: var(--lk-accent-deep);
+	border-radius: 3px;
+	padding: 0 2px;
+}
+
+@keyframes lk-drop {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
 .lk-hero__chips {
 	display: flex;
 	flex-wrap: wrap;

@@ -1,30 +1,24 @@
 /**
- * Header instant search.
+ * Instant search.
  *
- * One component powers the desktop field and the mobile search sheet:
- * grouped results (vehicles, brands, listings), full keyboard navigation and
- * an accessible combobox/listbox pattern.
+ * One component powers every `[data-lk-hsearch]` block: the header field (and
+ * its mobile sheet) plus the home hero field. It renders grouped results
+ * (vehicles, brands) as you type, with full keyboard navigation and the
+ * accessible combobox/listbox pattern.
  */
 (function () {
 	'use strict';
 
-	var head = document.querySelector('.lk-head');
-	var wrap = document.querySelector('[data-lk-hsearch]');
-	var form = wrap ? wrap.querySelector('form') : null;
-	var input = wrap ? wrap.querySelector('[data-lk-search-input]') : null;
-	var panel = wrap ? wrap.querySelector('[data-lk-search-results]') : null;
-	var toggle = document.querySelector('[data-lk-search-toggle]');
+	var config = window.LK || {};
+	var strings = config.strings || {};
+	var wraps = document.querySelectorAll('[data-lk-hsearch]');
 
-	if (!head || !wrap || !form || !input || !panel || !window.LK) {
+	if (!wraps.length) {
 		return;
 	}
 
-	var strings = window.LK.strings || {};
-	var controller = null;
-	var timer = null;
-	var lastTerm = '';
-	var results = [];
-	var active = -1;
+	var instances = [];
+	var MIN_CHARS = 2;
 
 	function esc(text) {
 		return String(text == null ? '' : text).replace(/[&<>"']/g, function (char) {
@@ -32,39 +26,26 @@
 		});
 	}
 
-	function openPanel() {
-		panel.hidden = false;
-		input.setAttribute('aria-expanded', 'true');
-		if (toggle) {
-			toggle.setAttribute('aria-expanded', 'true');
+	/* Wrap the first match of the typed term so results read at a glance. */
+	function highlight(text, term) {
+		var raw = String(text == null ? '' : text);
+
+		if (!term) {
+			return esc(raw);
 		}
+
+		var index = raw.toLowerCase().indexOf(String(term).toLowerCase());
+
+		if (index < 0) {
+			return esc(raw);
+		}
+
+		return esc(raw.slice(0, index)) +
+			'<mark class="lk-hs__mark">' + esc(raw.slice(index, index + String(term).length)) + '</mark>' +
+			esc(raw.slice(index + String(term).length));
 	}
 
-	function closePanel() {
-		panel.hidden = true;
-		input.setAttribute('aria-expanded', 'false');
-		if (toggle) {
-			toggle.setAttribute('aria-expanded', 'false');
-		}
-		setActive(-1);
-	}
-
-	function setActive(index) {
-		results.forEach(function (row, i) {
-			row.classList.toggle('is-active', i === index);
-			row.setAttribute('aria-selected', i === index ? 'true' : 'false');
-		});
-		active = index;
-
-		if (index > -1 && results[index]) {
-			input.setAttribute('aria-activedescendant', results[index].id);
-			results[index].scrollIntoView({ block: 'nearest' });
-		} else {
-			input.removeAttribute('aria-activedescendant');
-		}
-	}
-
-	function rowHtml(item, groupType) {
+	function rowHtml(item, groupType, term) {
 		var media = item.thumb
 			? '<img src="' + esc(item.thumb) + '" alt="" loading="lazy" decoding="async" />'
 			: '<span class="lk-hs__initial" aria-hidden="true">' + esc(item.initial || '') + '</span>';
@@ -77,205 +58,311 @@
 			'<a class="lk-hs__row" role="option" aria-selected="false" data-lk-result data-group="' + esc(groupType) + '" href="' + esc(item.url) + '">' +
 			'<span class="lk-hs__media">' + media + '</span>' +
 			'<span class="lk-hs__text">' +
-			'<span class="lk-hs__title">' + esc(item.title) + '</span>' +
+			'<span class="lk-hs__title">' + highlight(item.title, term) + '</span>' +
 			'<span class="lk-hs__meta">' + esc(item.meta || '') + '</span>' +
 			'</span>' +
 			price +
 			'</a></li>';
 	}
 
-	function render(payload) {
-		var groups = payload.groups || [];
-		var html = '';
+	function createSearch(wrap) {
+		var form = wrap.querySelector('form');
+		var input = wrap.querySelector('[data-lk-search-input]');
+		var panel = wrap.querySelector('[data-lk-search-results]');
+		var head = document.querySelector('.lk-head');
+		var toggle = document.querySelector('[data-lk-search-toggle]');
+		var isSheet = wrap.classList.contains('lk-hsearch');
+		/* The home hero clips its decorations; the dropdown needs an escape. */
+		var hero = wrap.closest('.lk-hero');
 
-		if (!groups.length) {
-			html = '<p class="lk-hs__empty">' + esc(strings.noResults || 'نتیجه‌ای یافت نشد.') + '</p>' +
-				'<p class="lk-hs__hint">املای عبارت را بررسی کنید یا نام برند را جستجو کنید.</p>';
-			panel.innerHTML = html;
-			results = [];
-			openPanel();
+		if (!form || !input || !panel) {
 			return;
 		}
 
-		groups.forEach(function (group) {
-			html += '<div class="lk-hs__group">';
-			html += '<p class="lk-hs__label">' + esc(group.label) + '</p><ul role="group">';
-			group.items.forEach(function (item) {
-				html += rowHtml(item, group.type);
-			});
-			html += '</ul>';
-			if (group.all) {
-				html += '<a class="lk-hs__all" href="' + esc(group.all.url) + '">' + esc(group.all.label) + ' ←</a>';
+		var controller = null;
+		var timer = null;
+		var lastTerm = '';
+		var results = [];
+		var active = -1;
+		var cache = {};
+
+		function openPanel() {
+			panel.hidden = false;
+			input.setAttribute('aria-expanded', 'true');
+
+			if (hero) {
+				hero.classList.add('is-search-open');
 			}
-			html += '</div>';
-		});
 
-		html += '<a class="lk-hs__footer" role="option" aria-selected="false" data-lk-result href="' + esc(payload.allUrl) + '">' +
-			'همه نتایج برای «' + esc(payload.term) + '»</a>';
-
-		panel.innerHTML = html;
-		results = Array.prototype.slice.call(panel.querySelectorAll('[data-lk-result]'));
-		results.forEach(function (row, i) {
-			row.id = 'lk-hs-result-' + i;
-		});
-		setActive(-1);
-		openPanel();
-	}
-
-	function search(term) {
-		if (term === lastTerm) {
-			return;
-		}
-		lastTerm = term;
-
-		if (term.length < 2) {
-			panel.innerHTML = '';
-			results = [];
-			closePanel();
-			return;
+			if (isSheet && toggle) {
+				toggle.setAttribute('aria-expanded', 'true');
+			}
 		}
 
-		if (controller) {
-			controller.abort();
+		function closePanel() {
+			panel.hidden = true;
+			input.setAttribute('aria-expanded', 'false');
+
+			if (hero) {
+				hero.classList.remove('is-search-open');
+			}
+
+			if (isSheet && toggle) {
+				toggle.setAttribute('aria-expanded', 'false');
+			}
+
+			setActive(-1);
 		}
-		controller = new AbortController();
 
-		openPanel();
-		panel.innerHTML = '<p class="lk-hs__empty is-loading">' + esc(strings.searching || 'در حال جستجو…') + '</p>';
+		function setActive(index) {
+			results.forEach(function (row, i) {
+				row.classList.toggle('is-active', i === index);
+				row.setAttribute('aria-selected', i === index ? 'true' : 'false');
+			});
+			active = index;
 
-		var url = window.LK.ajaxUrl + '?action=lk_live_search' +
-			'&nonce=' + encodeURIComponent(window.LK.nonce || '') +
-			'&term=' + encodeURIComponent(term);
+			if (index > -1 && results[index]) {
+				input.setAttribute('aria-activedescendant', results[index].id);
+				results[index].scrollIntoView({ block: 'nearest' });
+			} else {
+				input.removeAttribute('aria-activedescendant');
+			}
+		}
 
-		fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal })
-			.then(function (response) {
-				if (!response.ok) {
-					throw new Error('bad response');
-				}
-				return response.json();
-			})
-			.then(function (payload) {
-				if (!payload || !payload.success) {
-					throw new Error('bad payload');
-				}
-				if (input.value.trim() !== term) {
-					return;
-				}
-				render(payload.data || {});
-			})
-			.catch(function (error) {
-				if (error.name === 'AbortError') {
-					return;
-				}
-				panel.innerHTML = '<p class="lk-hs__empty">' + esc(strings.error || 'خطا در دریافت اطلاعات.') + '</p>';
+		function render(payload, term) {
+			var groups = payload.groups || [];
+			var html = '';
+
+			if (!groups.length) {
+				panel.innerHTML = '<p class="lk-hs__empty">' + esc(strings.noResults || 'نتیجه‌ای یافت نشد.') + '</p>' +
+					'<p class="lk-hs__hint">املای عبارت را بررسی کنید یا نام برند را جستجو کنید.</p>';
 				results = [];
 				openPanel();
-			});
-	}
-
-	function openMobileSearch() {
-		head.classList.add('is-search-open');
-		if (toggle) {
-			toggle.setAttribute('aria-expanded', 'true');
-		}
-		window.setTimeout(function () {
-			input.focus();
-		}, 30);
-	}
-
-	function closeMobileSearch() {
-		head.classList.remove('is-search-open');
-		if (toggle) {
-			toggle.setAttribute('aria-expanded', 'false');
-		}
-		closePanel();
-	}
-
-	input.addEventListener('input', function () {
-		var term = input.value.trim();
-		window.clearTimeout(timer);
-		timer = window.setTimeout(function () {
-			search(term);
-		}, 220);
-	});
-
-	input.addEventListener('focus', function () {
-		if (input.value.trim().length >= 2 && panel.innerHTML) {
-			openPanel();
-		}
-	});
-
-	input.addEventListener('keydown', function (event) {
-		if (event.key === 'ArrowDown' && results.length) {
-			event.preventDefault();
-			openPanel();
-			setActive((active + 1) % results.length);
-			return;
-		}
-
-		if (event.key === 'ArrowUp' && results.length) {
-			event.preventDefault();
-			setActive(active <= 0 ? results.length - 1 : active - 1);
-			return;
-		}
-
-		if (event.key === 'Enter' && active > -1 && results[active]) {
-			event.preventDefault();
-			window.location.href = results[active].href;
-			return;
-		}
-
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			closePanel();
-			closeMobileSearch();
-			input.blur();
-		}
-	});
-
-	if (toggle) {
-		toggle.addEventListener('click', function () {
-			if (head.classList.contains('is-search-open')) {
-				closeMobileSearch();
 				return;
 			}
-			openMobileSearch();
+
+			groups.forEach(function (group) {
+				html += '<div class="lk-hs__group">';
+				html += '<p class="lk-hs__label">' + esc(group.label) + '</p><ul role="group" aria-label="' + esc(group.label) + '">';
+				group.items.forEach(function (item) {
+					html += rowHtml(item, group.type, term);
+				});
+				html += '</ul>';
+
+				if (group.all) {
+					html += '<a class="lk-hs__all" href="' + esc(group.all.url) + '">' + esc(group.all.label) + ' ←</a>';
+				}
+
+				html += '</div>';
+			});
+
+			html += '<a class="lk-hs__footer" role="option" aria-selected="false" data-lk-result href="' + esc(payload.allUrl) + '">' +
+				'همه نتایج برای «' + esc(payload.term || term) + '»' + '</a>';
+
+			panel.innerHTML = html;
+			results = Array.prototype.slice.call(panel.querySelectorAll('[data-lk-result]'));
+			results.forEach(function (row, i) {
+				row.id = wrap.id ? wrap.id + '-result-' + i : 'lk-hs-result-' + i;
+			});
+			setActive(-1);
+			openPanel();
+		}
+
+		function search(term) {
+			if (term === lastTerm) {
+				return;
+			}
+			lastTerm = term;
+
+			if (term.length < MIN_CHARS) {
+				panel.innerHTML = '';
+				results = [];
+				closePanel();
+				return;
+			}
+
+			if (cache[term]) {
+				render(cache[term], term);
+				return;
+			}
+
+			if (controller) {
+				controller.abort();
+			}
+			controller = new AbortController();
+
+			openPanel();
+			panel.innerHTML = '<p class="lk-hs__empty is-loading">' + esc(strings.searching || 'در حال جستجو…') + '</p>';
+
+			var url = config.ajaxUrl + '?action=lk_live_search' +
+				'&nonce=' + encodeURIComponent(config.nonce || '') +
+				'&term=' + encodeURIComponent(term);
+
+			fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal })
+				.then(function (response) {
+					if (!response.ok) {
+						throw new Error('bad response');
+					}
+					return response.json();
+				})
+				.then(function (payload) {
+					if (!payload || !payload.success) {
+						throw new Error('bad payload');
+					}
+					if (input.value.trim() !== term) {
+						return;
+					}
+					cache[term] = payload.data || {};
+					render(payload.data || {}, term);
+				})
+				.catch(function (error) {
+					if (error.name === 'AbortError') {
+						return;
+					}
+					panel.innerHTML = '<p class="lk-hs__empty">' + esc(strings.error || 'خطا در دریافت اطلاعات.') + '</p>';
+					results = [];
+					openPanel();
+				});
+		}
+
+		function openSheet() {
+			if (!isSheet || !head) {
+				return;
+			}
+
+			head.classList.add('is-search-open');
+
+			if (toggle) {
+				toggle.setAttribute('aria-expanded', 'true');
+			}
+
+			window.setTimeout(function () {
+				input.focus();
+			}, 30);
+		}
+
+		function closeSheet() {
+			if (!isSheet || !head) {
+				return;
+			}
+
+			head.classList.remove('is-search-open');
+
+			if (toggle) {
+				toggle.setAttribute('aria-expanded', 'false');
+			}
+
+			closePanel();
+		}
+
+		input.addEventListener('input', function () {
+			var term = input.value.trim();
+			window.clearTimeout(timer);
+			timer = window.setTimeout(function () {
+				search(term);
+			}, 180);
+		});
+
+		input.addEventListener('focus', function () {
+			if (input.value.trim().length >= MIN_CHARS && panel.innerHTML) {
+				openPanel();
+			}
+		});
+
+		input.addEventListener('keydown', function (event) {
+			if (event.key === 'ArrowDown' && results.length) {
+				event.preventDefault();
+				openPanel();
+				setActive(active + 1 >= results.length ? 0 : active + 1);
+				return;
+			}
+
+			if (event.key === 'ArrowUp' && results.length) {
+				event.preventDefault();
+				openPanel();
+				setActive(active <= 0 ? results.length - 1 : active - 1);
+				return;
+			}
+
+			if (event.key === 'Enter' && active > -1 && results[active]) {
+				event.preventDefault();
+				window.location.href = results[active].href;
+				return;
+			}
+
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				closePanel();
+				closeSheet();
+				input.blur();
+			}
+		});
+
+		if (isSheet && toggle) {
+			toggle.addEventListener('click', function () {
+				if (head && head.classList.contains('is-search-open')) {
+					closeSheet();
+					return;
+				}
+				openSheet();
+			});
+		}
+
+		form.addEventListener('submit', function (event) {
+			if (active > -1 && results[active]) {
+				event.preventDefault();
+				window.location.href = results[active].href;
+			}
+		});
+
+		document.addEventListener('click', function (event) {
+			if (wrap.contains(event.target) || (isSheet && toggle && toggle.contains(event.target))) {
+				return;
+			}
+			closePanel();
+			closeSheet();
+		});
+
+		instances.push({
+			wrap: wrap,
+			input: input,
+			closePanel: closePanel,
+			openSheet: openSheet,
+			isSheet: isSheet
 		});
 	}
 
-	form.addEventListener('submit', function (event) {
-		if (active > -1 && results[active]) {
-			event.preventDefault();
-			window.location.href = results[active].href;
-		}
-	});
-
-	document.addEventListener('click', function (event) {
-		if (wrap.contains(event.target) || (toggle && toggle.contains(event.target))) {
-			return;
-		}
-		closePanel();
-		if (head.classList.contains('is-search-open')) {
-			closeMobileSearch();
-		}
-	});
+	Array.prototype.forEach.call(wraps, createSearch);
 
 	document.addEventListener('keydown', function (event) {
 		if (event.key === 'Escape') {
-			closePanel();
+			instances.forEach(function (instance) {
+				instance.closePanel();
+			});
 		}
 
-		if (event.key === '/' && document.activeElement !== input) {
-			var tag = (document.activeElement.tagName || '').toLowerCase();
-			if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-				return;
-			}
-			event.preventDefault();
-			if (window.matchMedia('(max-width: 899px)').matches) {
-				openMobileSearch();
-			} else {
-				input.focus();
-			}
+		if (event.key !== '/' || !instances.length) {
+			return;
+		}
+
+		var target = instances[0].input;
+
+		if (document.activeElement === target) {
+			return;
+		}
+
+		var tag = (document.activeElement.tagName || '').toLowerCase();
+
+		if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+			return;
+		}
+
+		event.preventDefault();
+
+		if (window.matchMedia('(max-width: 899px)').matches && instances[0].isSheet) {
+			instances[0].openSheet();
+		} else {
+			target.focus();
 		}
 	});
 })();

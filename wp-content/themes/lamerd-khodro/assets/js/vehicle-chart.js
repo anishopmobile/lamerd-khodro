@@ -11,6 +11,8 @@
 
 	var canvas = wrap.querySelector('[data-lk-chart]');
 	var state = wrap.querySelector('[data-lk-chart-state]');
+	var summary = document.querySelector('[data-lk-chart-summary]');
+	var historyBox = document.querySelector('[data-lk-chart-history]');
 	var vehicle = wrap.getAttribute('data-vehicle');
 	var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-lk-chart-range]'));
 	var strings = window.LK.strings || {};
@@ -52,6 +54,99 @@
 			state.innerHTML = '<span class="lk-chart__state-text">' + message + '</span>';
 		}
 		canvas.hidden = true;
+		if (summary) {
+			summary.hidden = true;
+		}
+		if (historyBox) {
+			historyBox.hidden = true;
+		}
+	}
+
+	function escapeHtml(value) {
+		return String(value).replace(/[&<>"']/g, function (character) {
+			return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character];
+		});
+	}
+
+	/**
+	 * Range stats (low / high / net change) rendered above the table.
+	 */
+	function renderSummary(payload) {
+		if (!summary) {
+			return;
+		}
+
+		var market = (payload.series.market || []).filter(function (value) {
+			return value !== null && value !== undefined;
+		});
+
+		if (market.length < 2) {
+			summary.hidden = true;
+			return;
+		}
+
+		var first = market[0];
+		var last = market[market.length - 1];
+		var change = last - first;
+		var percent = first ? (change / first) * 100 : 0;
+		var changeClass = change > 0 ? 'is-up' : (change < 0 ? 'is-down' : 'is-flat');
+		var arrow = change > 0 ? '▲' : (change < 0 ? '▼' : '•');
+
+		summary.innerHTML =
+			'<div class="lk-chart__stat"><span class="lk-chart__stat-label">کمترین قیمت بازه</span>' +
+			'<span class="lk-chart__stat-value">' + fa(Math.min.apply(null, market)) + ' تومان</span></div>' +
+			'<div class="lk-chart__stat"><span class="lk-chart__stat-label">بیشترین قیمت بازه</span>' +
+			'<span class="lk-chart__stat-value">' + fa(Math.max.apply(null, market)) + ' تومان</span></div>' +
+			'<div class="lk-chart__stat"><span class="lk-chart__stat-label">تغییر در این بازه</span>' +
+			'<span class="lk-change ' + changeClass + '"><span class="lk-change__arrow" aria-hidden="true">' + arrow + '</span>' +
+			'<span class="lk-change__percent">' + fa(Math.abs(percent).toFixed(2)) + '٪</span>' +
+			'<span class="lk-change__amount">' + fa(Math.abs(change)) + ' تومان</span></span></div>';
+		summary.hidden = false;
+	}
+
+	/**
+	 * Day-by-day price list (newest first).
+	 */
+	function renderTable(payload) {
+		if (!historyBox) {
+			return;
+		}
+
+		var points = (payload.points || []).slice().reverse();
+		if (!points.length) {
+			historyBox.hidden = true;
+			return;
+		}
+
+		var rows = '';
+		points.slice(0, 20).forEach(function (point, index) {
+			var previous = points[index + 1] ? points[index + 1].market : null;
+			var delta = null !== previous && null !== point.market ? point.market - previous : null;
+			var deltaClass = delta > 0 ? 'is-up' : (delta < 0 ? 'is-down' : 'is-flat');
+			var deltaArrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '•');
+
+			rows +=
+				'<tr>' +
+				'<td>' + escapeHtml(point.jalali) + '</td>' +
+				'<td>' + (null !== point.market ? fa(point.market) + ' تومان' : '—') + '</td>' +
+				'<td>' + (null === delta
+					? '<span class="lk-muted">—</span>'
+					: '<span class="lk-change ' + deltaClass + '"><span class="lk-change__arrow" aria-hidden="true">' + deltaArrow +
+						'</span><span class="lk-change__amount">' + fa(Math.abs(delta)) + ' تومان</span></span>') +
+				'</td>' +
+				'</tr>';
+		});
+
+		var more = points.length > 20
+			? '<p class="lk-chart__history-note">' + fa(points.length - 20) + ' روز قدیمی‌تر در نمودار و بازه‌های زمانی دیگر قابل مشاهده است.</p>'
+			: '';
+
+		historyBox.innerHTML =
+			'<div class="lk-table-wrap"><table class="lk-table lk-history-table">' +
+			'<caption class="lk-history-table__caption">قیمت بازار روزهای گذشته</caption>' +
+			'<thead><tr><th scope="col">تاریخ</th><th scope="col">قیمت بازار</th><th scope="col">تغییر نسبت به روز قبل</th></tr></thead>' +
+			'<tbody>' + rows + '</tbody></table></div>' + more;
+		historyBox.hidden = false;
 	}
 
 	function draw(payload) {
@@ -59,6 +154,9 @@
 			showMessage(payload && payload.note ? payload.note : (strings.chartEmpty || 'داده کافی برای رسم نمودار ثبت نشده است.'));
 			return;
 		}
+
+		renderSummary(payload);
+		renderTable(payload);
 
 		if (state) {
 			state.hidden = true;
@@ -200,6 +298,10 @@
 		})
 			.then(function (response) {
 				return response.json();
+			})
+			.then(function (payload) {
+				// REST responses are wrapped as { data, meta }.
+				return payload && payload.data ? payload.data : payload;
 			})
 			.then(draw)
 			.catch(function (error) {

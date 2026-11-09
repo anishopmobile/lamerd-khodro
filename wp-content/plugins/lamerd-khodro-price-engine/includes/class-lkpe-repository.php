@@ -342,9 +342,7 @@ class LKPE_Repository implements LK_Price_Repository_Interface {
 			ARRAY_A
 		);
 
-		if ( ! $rows ) {
-			return array();
-		}
+		$rows = (array) $rows;
 
 		// Baseline: last observation before the range keeps the line continuous.
 		$baseline = $wpdb->get_row(
@@ -358,6 +356,29 @@ class LKPE_Repository implements LK_Price_Repository_Interface {
 
 		if ( $baseline ) {
 			array_unshift( $rows, $baseline );
+		} else {
+			$snapshot_table = LKPE_Installer::table( 'price_snapshots' );
+			$baseline       = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM $snapshot_table WHERE vehicle_id = %d AND snapshot_date < %s ORDER BY snapshot_date DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+					(int) $vehicle['id'],
+					$from
+				),
+				ARRAY_A
+			);
+
+			if ( $baseline ) {
+				$rows[] = array(
+					'recorded_at'    => $baseline['snapshot_date'] . ' 12:00:00',
+					'market_price'   => $baseline['market_price'],
+					'factory_price'  => $baseline['factory_price'],
+					'change_amount'  => $baseline['change_amount'],
+					'change_percent' => $baseline['change_percent'],
+					'record_type'    => 'snapshot',
+					'data_status'    => $baseline['data_status'],
+					'source'         => 'cafekhodro',
+				);
+			}
 		}
 
 		$by_day = array();
@@ -373,6 +394,38 @@ class LKPE_Repository implements LK_Price_Repository_Interface {
 				'record_type'    => $row['record_type'],
 				'data_status'    => $row['data_status'],
 				'source'         => $row['source'],
+			);
+		}
+
+		/*
+		 * Daily snapshots fill the days without a price change, so the history has one
+		 * observation per day instead of only the days the market moved.
+		 */
+		$snapshots = LKPE_Installer::table( 'price_snapshots' );
+		$daily     = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $snapshots WHERE vehicle_id = %d AND snapshot_date BETWEEN %s AND %s ORDER BY snapshot_date ASC", // phpcs:ignore WordPress.DB.PreparedSQL
+				(int) $vehicle['id'],
+				$from,
+				$to
+			),
+			ARRAY_A
+		);
+
+		foreach ( (array) $daily as $snapshot ) {
+			$day = substr( $snapshot['snapshot_date'], 0, 10 );
+			if ( isset( $by_day[ $day ] ) ) {
+				continue;
+			}
+			$by_day[ $day ] = array(
+				'recorded_at'    => $snapshot['snapshot_date'] . ' 12:00:00',
+				'market_price'   => null !== $snapshot['market_price'] ? (int) $snapshot['market_price'] : null,
+				'factory_price'  => null !== $snapshot['factory_price'] ? (int) $snapshot['factory_price'] : null,
+				'change_amount'  => null !== $snapshot['change_amount'] ? (int) $snapshot['change_amount'] : null,
+				'change_percent' => null !== $snapshot['change_percent'] ? (float) $snapshot['change_percent'] : null,
+				'record_type'    => 'snapshot',
+				'data_status'    => $snapshot['data_status'],
+				'source'         => 'cafekhodro',
 			);
 		}
 

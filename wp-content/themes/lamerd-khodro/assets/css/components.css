@@ -1568,6 +1568,79 @@ a.lk-page-btn:hover {
 	line-height: 1.9;
 }
 
+.lk-chart__summary {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 10px;
+	margin-block-start: 18px;
+}
+
+.lk-chart__summary[hidden],
+.lk-chart__history[hidden] {
+	display: none;
+}
+
+.lk-chart__stat {
+	display: grid;
+	gap: 4px;
+	padding: 12px 14px;
+	background: var(--lk-surface);
+	border: 1px solid var(--lk-line);
+	border-radius: var(--lk-radius-sm);
+}
+
+.lk-chart__stat-label {
+	font-size: 0.72rem;
+	color: var(--lk-muted);
+}
+
+.lk-chart__stat-value {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--lk-ink);
+}
+
+.lk-chart__history {
+	margin-block-start: 18px;
+}
+
+.lk-chart__history .lk-table-wrap {
+	display: block;
+	max-height: 420px;
+	overflow: auto;
+}
+
+.lk-history-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.lk-history-table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--lk-surface);
+}
+
+.lk-history-table__caption {
+	padding: 12px 14px;
+	text-align: start;
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--lk-ink);
+	border-block-end: 1px solid var(--lk-line);
+}
+
+.lk-history-table td:last-child {
+	white-space: nowrap;
+}
+
+.lk-chart__history-note {
+	margin-block-start: 8px;
+	font-size: 0.72rem;
+	color: var(--lk-muted-2);
+}
+
 .lk-range {
 	display: inline-flex;
 	gap: 4px;

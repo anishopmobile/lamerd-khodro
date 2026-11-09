@@ -131,6 +131,9 @@ while ( have_posts() ) :
 					</div>
 				</div>
 
+				<div class="lk-chart__summary" data-lk-chart-summary hidden></div>
+				<div class="lk-chart__history" data-lk-chart-history hidden></div>
+
 				<p class="lk-chart__note">
 					تاریخچه قیمت از زمان فعال‌شدن سامانه در لامرد خودرو ثبت می‌شود؛ داده‌های پیش از راه‌اندازی بازسازی نمی‌شوند.
 					برای رسم نمودار به حداقل دو ثبت معتبر نیاز است.

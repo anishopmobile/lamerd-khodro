@@ -27,14 +27,28 @@ $lk_title  = lk_opt( 'hero_title', 'قیمت بازار را شفاف ببینی
 
 			<p class="lk-hero__lead"><?php echo esc_html( lk_opt( 'hero_text' ) ); ?></p>
 
-			<form class="lk-hero__search" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>">
-				<label class="screen-reader-text" for="lk-hero-search">جستجوی خودرو</label>
-				<div class="lk-hero__field">
-					<?php echo lk_icon( 'search', 'lk-icon--lg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<input type="search" id="lk-hero-search" name="s" placeholder="نام خودرو یا برند را جستجو کنید" autocomplete="off" />
-					<button type="submit" class="lk-btn lk-btn--accent">جستجو</button>
-				</div>
-			</form>
+			<div class="lk-hero__searchwrap" id="lk-hero-searchwrap" data-lk-hsearch>
+				<form class="lk-hero__search" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+					<label class="screen-reader-text" for="lk-hero-search">جستجوی خودرو</label>
+					<div class="lk-hero__field">
+						<?php echo lk_icon( 'search', 'lk-icon--lg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						<input
+							type="search"
+							id="lk-hero-search"
+							name="s"
+							placeholder="نام خودرو یا برند را جستجو کنید"
+							autocomplete="off"
+							role="combobox"
+							aria-autocomplete="list"
+							aria-expanded="false"
+							aria-controls="lk-hero-results"
+							data-lk-search-input
+						/>
+						<button type="submit" class="lk-btn lk-btn--accent">جستجو</button>
+					</div>
+				</form>
+				<div class="lk-hero__panel" id="lk-hero-results" role="listbox" aria-label="نتایج جستجو" data-lk-search-results hidden></div>
+			</div>
 
 			<ul class="lk-hero__chips">
 				<li><a href="<?php echo esc_url( lk_page_url( 'prices' ) ); ?>">قیمت روز خودرو</a></li>
